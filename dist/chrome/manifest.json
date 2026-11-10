@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Study Deck — New Tab",
+  "short_name": "Study Deck",
+  "version": "1.1.0",
+  "description": "A Material You study dashboard with to-dos, mock test tracker, calendar, notes, review, Pomodoro, Google search, apps and a bookmarks dock.",
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "permissions": ["storage", "bookmarks"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Study Deck",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "offline_enabled": true
+}

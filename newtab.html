@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-accent="purple" data-bg="gradient">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Study Deck</title>
+<link rel="stylesheet" href="styles/material.css">
+<script src="scripts/theme-init.js"></script>
+<script src="scripts/storage.js" defer></script>
+<script src="scripts/app.js" defer></script>
+</head>
+<body>
+
+<svg class="icon-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-todo" viewBox="0 0 24 24"><path d="M22 7h-9v2h9V7zm0 8h-9v2h9v-2zM5.54 11 2 7.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 11zm0 8L2 15.46l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41L5.54 19z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 13h3v8H3v-8zm5-6h3v14H8V7zm5-4h3v18h-3V3zm5 8h3v10h-3V11z"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM7 12h5v5H7v-5z"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10l6-6V5a2 2 0 0 0-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></symbol>
+  <symbol id="i-insights" viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99l1.5 1.5z"/><path d="M21 12h2v8h-2z"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.49.49 0 0 0 .12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></symbol>
+  <symbol id="i-apps" viewBox="0 0 24 24"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></symbol>
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2z"/></symbol>
+  <symbol id="i-bookmark-outline" viewBox="0 0 24 24"><path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2zm0 15-5-2.18L7 18V5h10v13z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7 1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91 1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12.34 2.02C6.59 1.82 2 6.42 2 12c0 5.52 4.48 10 10 10 3.71 0 6.93-2.02 8.66-5.02-7.51-.25-12.09-8.43-8.32-14.96z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></symbol>
+  <symbol id="i-reset" viewBox="0 0 24 24"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="M8.59 16.59 10 18l6-6-6-6-1.41 1.41L13.17 12z"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></symbol>
+  <symbol id="i-star-outline" viewBox="0 0 24 24"><path d="m22 9.24-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.42-4.03-8-9-8zm-5.5 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm3-4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm3 4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><path d="M21 3H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7v2H8v2h8v-2h-2v-2h7a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 14H3V5h18v12z"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.99 5.99 0 0 0 6 20h13a5 5 0 0 0 .35-9.96zM19 18H6a4 4 0 0 1-.33-7.98l.55-.05.26-.49A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 5.45 4.72l.13.83.84.14A3 3 0 0 1 19 18z"/></symbol>
+  <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></symbol>
+  <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></symbol>
+  <symbol id="i-grid-view" viewBox="0 0 24 24"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"/></symbol>
+  <symbol id="i-lamp" viewBox="0 0 24 24"><path d="M9 21h6v-2H9v2zm3-19a7 7 0 0 0-4 12.74V17h8v-2.26A7 7 0 0 0 12 2z"/></symbol>
+  <symbol id="i-drag" viewBox="0 0 24 24"><path d="M7 4h2v2H7V4zm0 7h2v2H7v-2zm0 7h2v2H7v-2zm8-14h2v2h-2V4zm0 7h2v2h-2v-2zm0 7h2v2h-2v-2z"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M12 3 2 12h3v9h6v-6h2v6h6v-9h3L12 3z"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 2l1.9 5.8L20 9.7l-5 3.7 1.7 6.1L12 16.2 7.3 19.5 9 13.4 4 9.7l6.1-1.9L12 2z"/></symbol>
+</svg>
+
+<div class="ambient" aria-hidden="true">
+  <span class="orb orb-a"></span>
+  <span class="orb orb-b"></span>
+  <span class="orb orb-c"></span>
+</div>
+
+<div class="app">
+  <aside class="rail" aria-label="Study Deck navigation">
+    <div class="brand">
+      <span class="brand-mark"><svg class="icon"><use href="#i-lamp"></use></svg></span>
+      <span class="brand-text">Study<br>Deck</span>
+    </div>
+
+    <nav class="rail-nav" id="tabbar" aria-label="Sections">
+      <button type="button" class="rail-item active" data-tab="home">
+        <span class="rail-icon-wrap"><svg class="icon"><use href="#i-home"></use></svg></span>
+        <span class="rail-label">Home</span>
+      </button>
+      <button type="button" class="rail-item" data-tab="todo">
+        <span class="rail-icon-wrap"><svg class="icon"><use href="#i-todo"></use></svg></span>
+        <span class="rail-label">To-do</span>
+      </button>
+      <button type="button" class="rail-item" data-tab="tracker">
+        <span class="rail-icon-wrap"><svg class="icon"><use href="#i-chart"></use></svg></span>
+        <span class="rail-label">Tracker</span>
+      </button>
+      <button type="button" class="rail-item" data-tab="calendar">
+        <span class="rail-icon-wrap"><svg class="icon"><use href="#i-calendar"></use></svg></span>
+        <span class="rail-label">Calendar</span>
+      </button>
+      <button type="button" class="rail-item" data-tab="notes">
+        <span class="rail-icon-wrap"><svg class="icon"><use href="#i-note"></use></svg></span>
+        <span class="rail-label">Notes</span>
+      </button>
+      <button type="button" class="rail-item" data-tab="review">
+        <span class="rail-icon-wrap"><svg class="icon"><use href="#i-insights"></use></svg></span>
+        <span class="rail-label">Review</span>
+      </button>
+    </nav>
+
+    <div class="rail-foot">
+      <div class="pomo-trigger" id="pomoTrigger" tabindex="0" role="button" aria-label="Pomodoro timer">
+        <span class="live-dot"></span>
+        <span class="pomo-trigger-copy">
+          <span class="trigger-time" id="triggerTime">25:00</span>
+          <span class="trigger-mode" id="triggerMode">Focus</span>
+        </span>
+
+        <div class="pomo-popup" role="dialog" aria-label="Pomodoro timer controls">
+          <span class="eyebrow">Pomodoro</span>
+          <div class="pomo-modes-mini">
+            <button type="button" class="mode-btn active" data-mode="work">Focus</button>
+            <button type="button" class="mode-btn" data-mode="short">Short</button>
+            <button type="button" class="mode-btn" data-mode="long">Long</button>
+          </div>
+          <div class="dial-wrap-mini">
+            <svg viewBox="0 0 130 130" aria-hidden="true">
+              <circle cx="65" cy="65" r="54" fill="none" stroke="var(--md-surface-container-highest)" stroke-width="8"/>
+              <circle id="dialProgress" cx="65" cy="65" r="54" fill="none" stroke="var(--md-primary)" stroke-width="8" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="0"/>
+            </svg>
+            <div class="dial-time-mini">
+              <div class="t" id="timerDisplay">25:00</div>
+              <div class="lbl" id="timerLabel">focus</div>
+            </div>
+          </div>
+          <div class="pomo-controls-mini">
+            <button type="button" class="btn filled small" id="pomoStart">Start</button>
+            <button type="button" class="btn text small" id="pomoReset">Reset</button>
+          </div>
+          <div class="pomo-stats-mini">Sessions <b id="sessCount">0</b> · Minutes <b id="focusMins">0</b></div>
+          <details class="pomo-settings-details">
+            <summary>Durations</summary>
+            <div class="pomo-settings">
+              <div class="row"><span>Focus (min)</span><input type="number" id="workLen" min="1" max="120" value="25"></div>
+              <div class="row"><span>Short (min)</span><input type="number" id="shortLen" min="1" max="60" value="5"></div>
+              <div class="row"><span>Long (min)</span><input type="number" id="longLen" min="1" max="90" value="15"></div>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <button type="button" class="rail-item rail-small" id="bookmarksBtn" title="Bookmarks">
+        <span class="rail-icon-wrap"><svg class="icon"><use href="#i-bookmark-outline"></use></svg></span>
+        <span class="rail-label">Bookmarks</span>
+      </button>
+      <button type="button" class="rail-item rail-small" id="appsBtn" title="Google apps">
+        <span class="rail-icon-wrap"><svg class="icon"><use href="#i-apps"></use></svg></span>
+        <span class="rail-label">Apps</span>
+      </button>
+      <button type="button" class="rail-item rail-small" id="themeToggle" title="Toggle light / dark theme">
+        <span class="rail-icon-wrap"><svg class="icon"><use href="#i-sun"></use></svg></span>
+        <span class="rail-label">Theme</span>
+      </button>
+      <button type="button" class="rail-item rail-small" id="railSettingsBtn" title="Customize Study Deck">
+        <span class="rail-icon-wrap"><svg class="icon"><use href="#i-settings"></use></svg></span>
+        <span class="rail-label">Settings</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="workspace">
+    <div class="workspace-body">
+      <!-- ================= HOME ================= -->
+      <div class="tab-panel active" data-panel="home">
+        <div class="home-grid" id="homeGrid" data-layout="split">
+          <section class="panel home-hero" id="homeHero">
+            <div class="home-hero-top">
+              <div class="home-greeting" id="homeGreetingBlock">
+                <span class="eyebrow"><svg class="icon"><use href="#i-sparkle"></use></svg> <span id="homeDaypart">Good morning</span></span>
+                <h1 id="homeGreeting">Welcome back</h1>
+                <p class="sub" id="homeSummary">Your day at a glance.</p>
+              </div>
+              <div class="clock home-clock" id="homeClock" data-style="digital">
+                <div class="clock-time">—</div>
+                <div class="clock-date">—</div>
+              </div>
+            </div>
+
+            <form class="home-search" id="homeSearchForm" role="search" autocomplete="off">
+              <span class="search-logo" aria-hidden="true">
+                <svg viewBox="0 0 48 48">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+              </span>
+              <input id="homeSearchInput" type="text" placeholder="Search Google or type a URL" spellcheck="false" aria-label="Search Google or type a URL">
+              <button type="button" class="icon-btn search-clear" id="homeSearchClear" title="Clear" hidden>
+                <svg class="icon"><use href="#i-close"></use></svg>
+              </button>
+              <button type="submit" class="btn filled home-search-go" title="Search" aria-label="Search">
+                <svg class="icon"><use href="#i-search"></use></svg> <span>Search</span>
+              </button>
+            </form>
+
+            <div class="home-quicklinks" id="homeQuickLinks"></div>
+          </section>
+
+          <section class="panel home-tasks" id="homeTasksCard">
+            <div class="home-card-head">
+              <h2><svg class="icon"><use href="#i-todo"></use></svg> Today’s tasks</h2>
+              <span class="home-task-count" id="homeTaskCount">0 left</span>
+            </div>
+            <form class="home-task-form" id="homeTaskForm">
+              <input id="homeTaskInput" type="text" placeholder="Add a task for today…" maxlength="140" aria-label="Add a task for today">
+              <button type="submit" class="icon-btn filled" title="Add task" aria-label="Add task">
+                <svg class="icon"><use href="#i-plus"></use></svg>
+              </button>
+            </form>
+            <ul class="home-task-list" id="homeTaskList"></ul>
+            <div class="home-task-empty" id="homeTaskEmpty" hidden>Nothing planned yet — add your first task above.</div>
+            <button type="button" class="btn text small home-card-link" id="homeOpenTodo">Open the full study log</button>
+          </section>
+
+          <section class="panel home-focus" id="homeFocusCard">
+            <div class="home-card-head">
+              <h2><svg class="icon"><use href="#i-clock"></use></svg> Focus</h2>
+              <span class="home-task-count" id="homePomoMode">Focus</span>
+            </div>
+            <div class="home-focus-body">
+              <div class="home-focus-dial">
+                <svg viewBox="0 0 120 120" aria-hidden="true">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="var(--md-surface-container-highest)" stroke-width="8"/>
+                  <circle id="homePomoRing" cx="60" cy="60" r="52" fill="none" stroke="var(--md-primary)" stroke-width="8" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="0"/>
+                </svg>
+                <div class="home-focus-time" id="homePomoTime">25:00</div>
+              </div>
+              <div class="home-focus-stats">
+                <span><b id="homeSessCount">0</b> sessions</span>
+                <span><b id="homeFocusMins">0</b> minutes</span>
+              </div>
+            </div>
+            <div class="home-focus-actions">
+              <button type="button" class="btn filled small" id="homePomoStart">Start</button>
+              <button type="button" class="btn text small" id="homePomoReset">Reset</button>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- ================= TODO ================= -->
+      <div class="tab-panel" data-panel="todo">
+        <section class="panel single">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow"><svg class="icon"><use href="#i-todo"></use></svg> Daily log</span>
+              <h1>To-do list</h1>
+              <p class="sub">Entries are grouped by date, like a daily study log. Add a time to get a reminder.</p>
+            </div>
+          </div>
+          <div class="todo-form">
+            <input type="date" id="todoDate" aria-label="Task date">
+            <input type="text" id="todoInput" placeholder="e.g. Revise organic chemistry ch.4" maxlength="140" aria-label="Task">
+            <input type="time" id="todoTime" aria-label="Reminder time">
+            <button type="button" class="btn filled" id="addTodoBtn">
+              <svg class="icon"><use href="#i-plus"></use></svg> Add task
+            </button>
+          </div>
+          <div class="todo-log" id="todoList"></div>
+        </section>
+      </div>
+
+      <!-- ================= TRACKER ================= -->
+      <div class="tab-panel" data-panel="tracker">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow"><svg class="icon"><use href="#i-chart"></use></svg> Sheet</span>
+              <h1>Mock test tracker</h1>
+              <p class="sub">Log every attempt, section-wise. Total marks adds up automatically. Click the Total Marks cell to mark it green or red.</p>
+            </div>
+          </div>
+          <div class="sheet-tabs" id="sheetTabs"></div>
+          <div class="tracker-toolbar">
+            <div class="tracker-summary" id="trackerSummary"></div>
+            <button type="button" class="btn tonal small" id="addRowBtn">
+              <svg class="icon"><use href="#i-plus"></use></svg> Add row
+            </button>
+          </div>
+          <div class="sheet-scroll">
+            <table class="sheet">
+              <thead id="sheetHead"></thead>
+              <tbody id="sheetBody"></tbody>
+            </table>
+          </div>
+          <div id="sheetEmpty" class="empty-state" hidden>No tests logged in this sheet yet — click “Add row” to start.</div>
+          <div class="trend-wrap">
+            <svg id="trendSvg" viewBox="0 0 600 120" width="100%" height="120" role="img" aria-label="Marks trend"></svg>
+          </div>
+        </section>
+      </div>
+
+      <!-- ================= CALENDAR ================= -->
+      <div class="tab-panel" data-panel="calendar">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow"><svg class="icon"><use href="#i-calendar"></use></svg> Track</span>
+              <h1>Calendar</h1>
+              <p class="sub">Log exam dates and events. Days remaining counts down for upcoming events.</p>
+            </div>
+          </div>
+
+          <div class="calendar-row">
+            <div class="calendar-col-grid">
+              <div class="month-nav">
+                <button type="button" class="icon-btn outline" id="prevMonthBtn" title="Previous month">
+                  <svg class="icon"><use href="#i-chevron-left"></use></svg>
+                </button>
+                <div class="month-label" id="monthLabel">—</div>
+                <button type="button" class="icon-btn outline" id="nextMonthBtn" title="Next month">
+                  <svg class="icon"><use href="#i-chevron-right"></use></svg>
+                </button>
+                <button type="button" class="btn text small" id="todayMonthBtn">Today</button>
+              </div>
+              <div class="month-grid" id="monthGrid"></div>
+            </div>
+
+            <div class="calendar-col-list">
+              <div class="calendar-form">
+                <input type="text" id="eventTitleInput" placeholder="e.g. IBPS PO Prelims" maxlength="80" aria-label="Event title">
+                <input type="date" id="eventDateInput" aria-label="Event date">
+                <button type="button" class="btn filled" id="addEventBtn">
+                  <svg class="icon"><use href="#i-plus"></use></svg> Add
+                </button>
+              </div>
+              <div class="calendar-list" id="calendarList"></div>
+              <div id="calendarEmpty" class="empty-state" hidden>No events yet — add one above to start tracking it.</div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ================= NOTES ================= -->
+      <div class="tab-panel" data-panel="notes">
+        <section class="panel single">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow"><svg class="icon"><use href="#i-note"></use></svg> Notes</span>
+              <h1>Quick capture</h1>
+              <p class="sub">Formulas, doubts, reminders to yourself.</p>
+            </div>
+          </div>
+          <div class="note-form">
+            <input type="text" id="noteTitle" placeholder="Title (optional)" maxlength="60" aria-label="Note title">
+            <textarea id="noteBody" placeholder="Write a note…" aria-label="Note body"></textarea>
+            <button type="button" class="btn filled" id="addNoteBtn">Save note</button>
+          </div>
+          <div class="notes-list" id="notesList"></div>
+        </section>
+      </div>
+
+      <!-- ================= REVIEW ================= -->
+      <div class="tab-panel" data-panel="review">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow"><svg class="icon"><use href="#i-insights"></use></svg> Review</span>
+              <h1>Weekly summary</h1>
+              <p class="sub">A snapshot of how the last 7 days went, across everything you’re tracking.</p>
+            </div>
+          </div>
+          <div class="review-cards" id="reviewCards"></div>
+          <div class="review-row">
+            <div class="review-block">
+              <h2 class="small-heading"><span class="eyebrow">Focus</span> Minutes per day</h2>
+              <svg id="weekBarSvg" viewBox="0 0 460 160" width="100%" height="160" role="img" aria-label="Focus minutes per day"></svg>
+            </div>
+            <div class="review-block">
+              <h2 class="small-heading"><span class="eyebrow">Notes</span> Latest entries</h2>
+              <div id="reviewNotes" class="review-notes"></div>
+            </div>
+          </div>
+          <h2 class="small-heading"><span class="eyebrow">Tests</span> Mock performance by sheet</h2>
+          <div class="review-table-wrap">
+            <table class="review-table">
+              <thead><tr><th>Sheet</th><th>Tests</th><th>Avg marks</th><th>Avg accuracy</th><th>Latest percentile</th></tr></thead>
+              <tbody id="reviewTrackerBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ================= DESKTOP WIDGETS ================= -->
+<div class="widget-layer" id="widgetLayer" aria-label="Desktop widgets">
+
+  <section class="widget widget-clock" data-widget="clock" aria-label="Clock widget">
+    <button type="button" class="widget-grip" data-widget-grip="clock" title="Drag clock" aria-label="Drag clock widget">
+      <svg class="icon"><use href="#i-drag"></use></svg>
+    </button>
+    <div class="clock" id="clockBlock" data-style="digital">
+      <div class="clock-time">—</div>
+      <div class="clock-date">—</div>
+    </div>
+  </section>
+
+  <section class="widget widget-search" data-widget="search" aria-label="Search widget">
+    <button type="button" class="widget-grip" data-widget-grip="search" title="Drag search" aria-label="Drag search widget">
+      <svg class="icon"><use href="#i-drag"></use></svg>
+    </button>
+    <form class="search" id="searchForm" role="search" autocomplete="off">
+      <span class="search-logo" aria-hidden="true">
+        <svg viewBox="0 0 48 48">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+      </span>
+      <input id="searchInput" type="text" placeholder="Search Google or type a URL" spellcheck="false" aria-label="Search Google or type a URL">
+      <button type="button" class="icon-btn search-clear" id="searchClear" title="Clear" hidden>
+        <svg class="icon"><use href="#i-close"></use></svg>
+      </button>
+      <button type="submit" class="search-go" title="Search" aria-label="Search">
+        <svg class="icon"><use href="#i-search"></use></svg>
+      </button>
+    </form>
+  </section>
+
+  <section class="widget widget-dock" data-widget="dock" aria-label="Favourites widget">
+    <button type="button" class="widget-grip" data-widget-grip="dock" title="Drag favourites" aria-label="Drag favourites widget">
+      <svg class="icon"><use href="#i-drag"></use></svg>
+    </button>
+    <div class="dock-wrap" id="dockWrap">
+      <div class="dock" id="dock" aria-label="Favourite bookmarks"></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ================= APPS ================= -->
+<dialog class="apps-dialog" id="appsDialog" aria-label="Google apps">
+  <div class="apps-sheet">
+    <header class="sheet-head">
+      <div>
+        <span class="eyebrow">Launcher</span>
+        <h2>Google apps</h2>
+      </div>
+      <button type="button" class="icon-btn" id="appsClose" title="Close">
+        <svg class="icon"><use href="#i-close"></use></svg>
+      </button>
+    </header>
+    <div class="apps-grid" id="appsGrid"></div>
+    <footer class="apps-foot">
+      <span class="muted">Tip: you can hide the apps button from Settings → Layout.</span>
+    </footer>
+  </div>
+</dialog>
+
+<!-- ================= BOOKMARKS ================= -->
+<div class="scrim" id="scrim" hidden></div>
+<aside class="bookmarks-panel" id="bookmarksPanel" aria-label="Bookmarks" aria-hidden="true">
+  <header class="sheet-head">
+    <div>
+      <span class="eyebrow">Browser</span>
+      <h2>Bookmarks</h2>
+    </div>
+    <button type="button" class="icon-btn" id="bookmarksClose" title="Close">
+      <svg class="icon"><use href="#i-close"></use></svg>
+    </button>
+  </header>
+  <label class="bookmarks-search">
+    <svg class="icon"><use href="#i-search"></use></svg>
+    <input type="search" id="bookmarksSearch" placeholder="Search bookmarks" autocomplete="off" aria-label="Search bookmarks">
+  </label>
+  <div class="bookmarks-list" id="bookmarksList"></div>
+  <footer class="bookmarks-foot">
+    <span class="muted" id="bookmarksHint">Star a bookmark to pin it to your dock.</span>
+  </footer>
+</aside>
+
+<!-- ================= SETTINGS ================= -->
+<dialog class="settings-dialog" id="settingsDialog" aria-label="Customize Study Deck">
+  <div class="settings-sheet">
+    <header class="sheet-head settings-head">
+      <div>
+        <span class="eyebrow">Personalize</span>
+        <h2>Customize Study Deck</h2>
+      </div>
+      <button type="button" class="icon-btn" id="settingsClose" title="Close">
+        <svg class="icon"><use href="#i-close"></use></svg>
+      </button>
+    </header>
+
+    <div class="settings-tabs" id="settingsTabs" role="tablist" aria-label="Settings sections">
+      <button type="button" class="seg-btn active" data-settings-tab="appearance" role="tab" aria-selected="true">Appearance</button>
+      <button type="button" class="seg-btn" data-settings-tab="home" role="tab" aria-selected="false">Home</button>
+      <button type="button" class="seg-btn" data-settings-tab="layout" role="tab" aria-selected="false">Layout</button>
+      <button type="button" class="seg-btn" data-settings-tab="search" role="tab" aria-selected="false">Search</button>
+      <button type="button" class="seg-btn" data-settings-tab="dock" role="tab" aria-selected="false">Dock</button>
+      <button type="button" class="seg-btn" data-settings-tab="data" role="tab" aria-selected="false">Data &amp; sync</button>
+    </div>
+
+    <div class="settings-body">
+      <!-- Appearance -->
+      <section class="settings-section" data-settings-panel="appearance">
+        <div class="setting-group">
+          <h3>Theme</h3>
+          <p class="setting-desc">Follow the system or lock the deck to light or dark.</p>
+          <div class="seg" id="themeSeg">
+            <button type="button" data-theme-choice="system">System</button>
+            <button type="button" data-theme-choice="light">Light</button>
+            <button type="button" data-theme-choice="dark">Dark</button>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <h3>Clock</h3>
+          <p class="setting-desc">Pick a Material You clock face. Drag the clock on the page to move it anywhere.</p>
+          <div class="clock-choices" id="clockChoices"></div>
+          <label class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Show seconds</span><span class="setting-desc">Include seconds in digital faces and the analog hand.</span></span>
+            <span class="switch"><input type="checkbox" data-setting="clockSeconds"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+          <label class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Show date</span><span class="setting-desc">Display today’s date under the time.</span></span>
+            <span class="switch"><input type="checkbox" data-setting="clockShowDate"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+        </div>
+
+        <div class="setting-group">
+          <h3>Accent colour</h3>
+          <p class="setting-desc">Material You tonal palette used across the whole deck.</p>
+          <div class="swatches" id="accentSwatches"></div>
+        </div>
+
+        <div class="setting-group">
+          <h3>Background</h3>
+          <p class="setting-desc">Ambient colour behind the surfaces.</p>
+          <div class="seg" id="bgSeg">
+            <button type="button" data-bg-choice="gradient">Gradient</button>
+            <button type="button" data-bg-choice="soft">Soft</button>
+            <button type="button" data-bg-choice="plain">Plain</button>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <h3>Glassmorphism</h3>
+          <p class="setting-desc">Turn panels, dialogs, widgets and the dock into translucent glass so the ambient colour shows through.</p>
+          <div class="seg" id="surfaceSeg">
+            <button type="button" data-surface-choice="solid">Solid</button>
+            <button type="button" data-surface-choice="glass">Glass</button>
+            <button type="button" data-surface-choice="frosted">Frosted</button>
+          </div>
+          <div class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Glass strength</span><span class="setting-desc">More strength means a clearer tint and stronger blur.</span></span>
+            <input type="range" min="20" max="100" step="2" data-setting="glassStrength" class="range" aria-label="Glass strength">
+          </div>
+          <label class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Accent glow</span><span class="setting-desc">Add a soft coloured edge to glass surfaces.</span></span>
+            <span class="switch"><input type="checkbox" data-setting="glassGlow"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+        </div>
+
+        <label class="setting-row">
+          <span class="setting-copy">
+            <span class="setting-title">Animations</span>
+            <span class="setting-desc">Page transitions, dock magnification and hover states.</span>
+          </span>
+          <span class="switch"><input type="checkbox" data-setting="animations"><span class="track"></span><span class="thumb"></span></span>
+        </label>
+
+        <label class="setting-row">
+          <span class="setting-copy">
+            <span class="setting-title">Compact density</span>
+            <span class="setting-desc">Tighter spacing to fit more on screen.</span>
+          </span>
+          <span class="switch"><input type="checkbox" data-setting="compact"><span class="track"></span><span class="thumb"></span></span>
+        </label>
+      </section>
+
+      <!-- Home -->
+      <section class="settings-section" data-settings-panel="home" hidden>
+        <div class="setting-group">
+          <h3>Greeting</h3>
+          <p class="setting-desc">Make the Home tab yours. The greeting changes with the time of day.</p>
+          <div class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Your name</span><span class="setting-desc">Leave blank to use just the time-of-day greeting.</span></span>
+            <input type="text" data-setting="homeName" maxlength="24" placeholder="Your name" class="home-name-input" aria-label="Your name">
+          </div>
+          <label class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Greeting &amp; summary</span><span class="setting-desc">Show the time-of-day greeting and today’s summary line.</span></span>
+            <span class="switch"><input type="checkbox" data-setting="showHomeGreeting"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+        </div>
+
+        <div class="setting-group">
+          <h3>Home layout</h3>
+          <p class="setting-desc">Choose how the Home cards are arranged.</p>
+          <div class="seg" id="homeLayoutSeg">
+            <button type="button" data-home-layout="split">Split</button>
+            <button type="button" data-home-layout="stack">Stacked</button>
+            <button type="button" data-home-layout="compact">Compact</button>
+          </div>
+          <label class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Hide floating widgets on Home</span><span class="setting-desc">Avoid a second clock and search bar while Home is open. Widgets return on other tabs.</span></span>
+            <span class="switch"><input type="checkbox" data-setting="hideWidgetsOnHome"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+        </div>
+
+        <div class="setting-group">
+          <h3>Home cards</h3>
+          <label class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Clock</span><span class="setting-desc">Large clock inside the Home hero. Uses your chosen clock face.</span></span>
+            <span class="switch"><input type="checkbox" data-setting="showHomeClock"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+          <label class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Google search</span><span class="setting-desc">Search bar and button on Home.</span></span>
+            <span class="switch"><input type="checkbox" data-setting="showHomeSearch"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+          <label class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Quick links</span><span class="setting-desc">Your favourite dock websites, shown as chips.</span></span>
+            <span class="switch"><input type="checkbox" data-setting="showHomeQuick"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+          <label class="setting-row">
+            <span class="setting-copy"><span class="setting-title">To-do tasks</span><span class="setting-desc">Today’s tasks with quick add, check and delete.</span></span>
+            <span class="switch"><input type="checkbox" data-setting="showHomeTasks"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+          <label class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Focus timer</span><span class="setting-desc">Pomodoro status with start and reset controls.</span></span>
+            <span class="switch"><input type="checkbox" data-setting="showHomeFocus"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Layout -->
+      <section class="settings-section" data-settings-panel="layout" hidden>
+        <h3>Top bar &amp; widgets</h3>
+        <p class="setting-desc">Choose which pieces of the deck are visible. Settings always stays available.</p>
+
+        <label class="setting-row">
+          <span class="setting-copy"><span class="setting-title">Clock</span><span class="setting-desc">Show the time and date in the top-left.</span></span>
+          <span class="switch"><input type="checkbox" data-setting="showClock"><span class="track"></span><span class="thumb"></span></span>
+        </label>
+        <label class="setting-row">
+          <span class="setting-copy"><span class="setting-title">Google search bar</span><span class="setting-desc">Centered search field at the top.</span></span>
+          <span class="switch"><input type="checkbox" data-setting="showSearch"><span class="track"></span><span class="thumb"></span></span>
+        </label>
+        <label class="setting-row">
+          <span class="setting-copy"><span class="setting-title">Pomodoro timer</span><span class="setting-desc">Timer chip at the bottom of the navigation rail.</span></span>
+          <span class="switch"><input type="checkbox" data-setting="showPomodoro"><span class="track"></span><span class="thumb"></span></span>
+        </label>
+        <label class="setting-row">
+          <span class="setting-copy"><span class="setting-title">Bookmarks button</span><span class="setting-desc">Navigation-rail button that opens the browser bookmarks panel.</span></span>
+          <span class="switch"><input type="checkbox" data-setting="showBookmarksBtn"><span class="track"></span><span class="thumb"></span></span>
+        </label>
+        <label class="setting-row">
+          <span class="setting-copy"><span class="setting-title">Google apps button</span><span class="setting-desc">Navigation-rail launcher for Google apps.</span></span>
+          <span class="switch"><input type="checkbox" data-setting="showAppsBtn"><span class="track"></span><span class="thumb"></span></span>
+        </label>
+        <label class="setting-row">
+          <span class="setting-copy"><span class="setting-title">Favourites dock</span><span class="setting-desc">Bookmark dock at the bottom of the page.</span></span>
+          <span class="switch"><input type="checkbox" data-setting="showDock"><span class="track"></span><span class="thumb"></span></span>
+        </label>
+
+        <div class="setting-group widget-pos-group">
+          <h3>Widget positions</h3>
+          <p class="setting-desc">Place the clock, search and dock anywhere on the page. Use the arrow pad for a preset, or drag a widget’s grip for free placement.</p>
+          <div class="widget-pos-list" id="widgetPosList"></div>
+          <label class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Drag widgets</span><span class="setting-desc">Show the grip handle and allow free placement.</span></span>
+            <span class="switch"><input type="checkbox" data-setting="widgetDrag"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+          <label class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Snap to grid</span><span class="setting-desc">Align free positions to a 12-column grid.</span></span>
+            <span class="switch"><input type="checkbox" data-setting="widgetSnap"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+          <button type="button" class="btn text small" id="widgetReset">Reset widget positions</button>
+        </div>
+      </section>
+
+      <!-- Search -->
+      <section class="settings-section" data-settings-panel="search" hidden>
+        <div class="setting-group">
+          <h3>Search engine</h3>
+          <p class="setting-desc">Used when the text you type is not a URL.</p>
+          <select data-setting="engine" class="select" aria-label="Search engine">
+            <option value="google">Google</option>
+            <option value="bing">Bing</option>
+            <option value="duckduckgo">DuckDuckGo</option>
+            <option value="brave">Brave Search</option>
+            <option value="ecosia">Ecosia</option>
+            <option value="youtube">YouTube</option>
+          </select>
+        </div>
+
+        <label class="setting-row">
+          <span class="setting-copy"><span class="setting-title">Open results in a new tab</span><span class="setting-desc">Keep the Study Deck new-tab page open.</span></span>
+          <span class="switch"><input type="checkbox" data-setting="searchNewTab"><span class="track"></span><span class="thumb"></span></span>
+        </label>
+
+        <label class="setting-row">
+          <span class="setting-copy"><span class="setting-title">Search from the address bar too</span><span class="setting-desc">Firefox only: set Study Deck as your home page for omnibox searches.</span></span>
+          <span class="badge-soft">Browser setting</span>
+        </label>
+
+        <div class="info-card">
+          <svg class="icon"><use href="#i-search"></use></svg>
+          <div>
+            <strong>Shortcuts</strong>
+            <p>Press <kbd>/</kbd> or <kbd>Ctrl</kbd> + <kbd>K</kbd> to focus search. Press <kbd>Esc</kbd> to close panels.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dock -->
+      <section class="settings-section" data-settings-panel="dock" hidden>
+        <div class="setting-group">
+          <h3>Dock favourites</h3>
+          <p class="setting-desc">These are the icons in the bottom dock. Drag order with the arrows.</p>
+          <div class="dock-settings-list" id="dockList"></div>
+          <form class="dock-add-form" id="dockAddForm">
+            <input type="text" id="dockTitle" placeholder="Name" maxlength="40" aria-label="Bookmark name">
+            <input type="url" id="dockUrl" placeholder="https://example.com" aria-label="Bookmark URL">
+            <button type="submit" class="btn tonal small"><svg class="icon"><use href="#i-plus"></use></svg> Add</button>
+          </form>
+          <button type="button" class="btn text small" id="dockReset">Restore default dock</button>
+        </div>
+
+        <div class="setting-group">
+          <h3>Dock behaviour</h3>
+          <label class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Hover magnification</span><span class="setting-desc">macOS-style dock zoom.</span></span>
+            <span class="switch"><input type="checkbox" data-setting="dockMagnify"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+          <label class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Open dock links in a new tab</span><span class="setting-desc">Leave this page open when a favourite is clicked.</span></span>
+            <span class="switch"><input type="checkbox" data-setting="dockNewTab"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+          <div class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Icon size</span><span class="setting-desc">Adjust the dock icon size.</span></span>
+            <input type="range" min="44" max="76" step="2" data-setting="dockSize" class="range" aria-label="Dock icon size">
+          </div>
+        </div>
+      </section>
+
+      <!-- Data -->
+      <section class="settings-section" data-settings-panel="data" hidden>
+        <div class="setting-group">
+          <h3>Sync</h3>
+          <p class="setting-desc">Study Deck saves to this browser. Turn on browser sync to share data between devices signed into the same Chrome or Firefox account.</p>
+          <label class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Browser sync</span><span class="setting-desc" id="syncHint">Syncs through your browser account.</span></span>
+            <span class="switch"><input type="checkbox" id="syncToggle"><span class="track"></span><span class="thumb"></span></span>
+          </label>
+          <div class="status-card" id="syncStatus">Checking storage…</div>
+          <p class="tiny-note">Chrome and Firefox do not share a sync account. To move data between them, use Export backup here and Import backup in the other browser.</p>
+        </div>
+
+        <div class="setting-group">
+          <h3>Storage</h3>
+          <div class="status-card" id="storageUsage">Calculating…</div>
+        </div>
+
+        <div class="setting-group">
+          <h3>Backup</h3>
+          <p class="setting-desc">Export a single JSON file with tasks, notes, mock tests, calendar, Pomodoro history and settings.</p>
+          <div class="button-row">
+            <button type="button" class="btn filled" id="exportBtn">
+              <svg class="icon"><use href="#i-download"></use></svg> Export backup
+            </button>
+            <button type="button" class="btn tonal" id="importBtn">
+              <svg class="icon"><use href="#i-upload"></use></svg> Import backup
+            </button>
+            <input type="file" id="importFile" accept="application/json,.json" hidden>
+          </div>
+        </div>
+
+        <div class="setting-group danger-group">
+          <h3>Danger zone</h3>
+          <p class="setting-desc">Deletes everything in this browser, including synced data.</p>
+          <button type="button" class="btn danger" id="clearDataBtn">
+            <svg class="icon"><use href="#i-trash"></use></svg> Clear all data
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <footer class="settings-foot">
+      <button type="button" class="btn text" id="settingsReset">Reset settings</button>
+      <button type="button" class="btn filled" id="settingsDone">Done</button>
+    </footer>
+  </div>
+</dialog>
+
+<div id="toastHost" class="toast-host" aria-live="polite"></div>
+
+<datalist id="examOptions">
+  <option value="RBI Assistant"></option><option value="RBI Grade B"></option><option value="IBPS PO"></option><option value="IBPS Clerk"></option>
+  <option value="IBPS RRB PO"></option><option value="IBPS RRB Clerk"></option><option value="SBI PO"></option><option value="SBI Clerk"></option>
+  <option value="SSC CGL"></option><option value="SSC CHSL"></option>
+</datalist>
+
+</body>
+</html>

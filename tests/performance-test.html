@@ -1,0 +1,1050 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Study Deck — Performance test</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #101418;
+    --surface: #171c22;
+    --surface-2: #1f252d;
+    --surface-3: #29303a;
+    --line: #3c4653;
+    --text: #e3e8ef;
+    --muted: #a9b4c2;
+    --primary: #8fd6ff;
+    --accent: #9be7c4;
+    --ok: #7ee2a8;
+    --bad: #ffb4ab;
+    --warn: #f6d67c;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background:
+      radial-gradient(800px 460px at -8% -18%, #173a4a 0%, transparent 60%),
+      radial-gradient(720px 480px at 108% 0%, #1d3a34 0%, transparent 55%),
+      var(--bg);
+    color: var(--text);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: 22px;
+  }
+  h1, h2, p { margin: 0; }
+  .top {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    background: #1d4450;
+    color: #c9f0ff;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+  h1 { margin-top: 9px; font-size: clamp(25px, 4vw, 36px); letter-spacing: -.03em; line-height: 1.1; }
+  .sub { margin-top: 7px; color: var(--muted); max-width: 76ch; font-size: 13px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--text);
+    padding: 10px 18px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .15s ease, background .15s ease, border-color .15s ease;
+  }
+  button:hover { background: var(--surface-3); border-color: #55616f; }
+  button:active { transform: scale(.97); }
+  button.primary { background: var(--primary); border-color: var(--primary); color: #052432; }
+  button.primary:hover { background: #b3e6ff; }
+  button:disabled { opacity: .55; cursor: not-allowed; }
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+    gap: 16px;
+    align-items: start;
+  }
+  @media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
+  .card {
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: color-mix(in srgb, var(--surface) 85%, transparent);
+    box-shadow: 0 18px 55px rgba(0, 0, 0, .28);
+    overflow: hidden;
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .card-head h2 { font-size: 14px; letter-spacing: .02em; }
+  .card-head span { color: var(--muted); font-size: 11.5px; }
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    padding: 14px;
+  }
+  .stat {
+    padding: 12px 13px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface-2);
+    min-width: 0;
+  }
+  .stat b { display: block; font-size: 21px; line-height: 1.2; letter-spacing: -.02em; }
+  .stat small { display: block; color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-top: 2px; }
+  .stat.pass b { color: var(--ok); }
+  .stat.fail b { color: var(--bad); }
+  .progress { height: 5px; margin: 0 14px 12px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+  .progress > i { display: block; height: 100%; width: 0%; border-radius: inherit; background: linear-gradient(90deg, #8fd6ff, #9be7c4); transition: width .25s ease; }
+  .tests { list-style: none; margin: 0; padding: 0 10px 10px; max-height: 50vh; overflow: auto; }
+  .test {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: start;
+    padding: 10px 8px;
+    border-radius: 12px;
+  }
+  .test + .test { border-top: 1px solid #232a33; }
+  .test:hover { background: #1a2028; }
+  .mark {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--surface-3);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    margin-top: 1px;
+  }
+  .test.pass .mark { background: rgba(126, 226, 168, .14); color: var(--ok); }
+  .test.fail .mark { background: rgba(255, 180, 171, .14); color: var(--bad); }
+  .test.skip .mark { background: rgba(246, 214, 124, .14); color: var(--warn); }
+  .test.run .mark { background: rgba(143, 214, 255, .15); color: var(--primary); animation: pulse 1s ease infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .test-name { font-size: 12.8px; font-weight: 600; }
+  .test-detail { margin-top: 2px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+  .test.fail .test-detail { color: var(--bad); }
+  .test.skip .test-detail { color: var(--warn); }
+  .test-time { color: var(--muted); font: 10.5px var(--mono); padding-top: 3px; }
+  .metrics { list-style: none; margin: 0; padding: 10px 16px 16px; }
+  .metric {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: baseline;
+    padding: 8px 0;
+    border-top: 1px solid #232a33;
+  }
+  .metric:first-child { border-top: 0; }
+  .metric span { color: var(--muted); font-size: 11.5px; }
+  .metric b { font: 600 12px var(--mono); letter-spacing: -.01em; }
+  .metric b.good { color: var(--ok); }
+  .metric b.warn { color: var(--warn); }
+  .metric b.bad { color: var(--bad); }
+  .preview-body { padding: 12px; }
+  .preview-frame {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #141218;
+  }
+  .preview-frame iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1280px;
+    height: 900px;
+    border: 0;
+    transform-origin: top left;
+  }
+  .preview-empty {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .hint {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 11px 13px;
+    border: 1px dashed var(--line);
+    border-radius: 12px;
+    color: var(--muted);
+    font-size: 11.5px;
+    margin-top: 10px;
+  }
+  .hint code { font-family: var(--mono); color: var(--primary); }
+  .foot { margin-top: 14px; color: #7f8a97; font-size: 11px; }
+</style>
+</head>
+<body>
+  <header class="top">
+    <div>
+      <span class="eyebrow"><span class="dot"></span> Performance test</span>
+      <h1>Study Deck speed &amp; fluidity</h1>
+      <p class="sub">Measures cold boot, DOM and CSS weight, storage and heap footprint, long tasks, frame rate and dropped frames while the clock ticks, tabs switch and widgets animate. Thresholds are tuned for a lightweight new-tab page.</p>
+    </div>
+    <div class="actions">
+      <button type="button" id="runBtn" class="primary">Run performance test</button>
+      <button type="button" id="openBtn">Open test in new tab</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <section class="card" aria-label="Performance test results">
+      <div class="card-head">
+        <h2>Results</h2>
+        <span id="statusText">Waiting to start…</span>
+      </div>
+      <div class="summary">
+        <div class="stat"><b id="statTotal">0</b><small>Tests</small></div>
+        <div class="stat pass"><b id="statPass">0</b><small>Passed</small></div>
+        <div class="stat fail"><b id="statFail">0</b><small>Failed</small></div>
+        <div class="stat"><b id="statSkip">0</b><small>Skipped</small></div>
+        <div class="stat"><b id="statTime">0 ms</b><small>Duration</small></div>
+      </div>
+      <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+      <ul class="tests" id="testList" aria-live="polite"></ul>
+    </section>
+
+    <aside class="card" aria-label="Live measurements">
+      <div class="card-head">
+        <h2>Live measurements</h2>
+        <span id="previewLabel">1280 × 900</span>
+      </div>
+      <div class="preview-body">
+        <div class="preview-frame" id="previewFrame">
+          <div class="preview-empty" id="previewEmpty">Measurements start with the run</div>
+        </div>
+        <ul class="metrics" id="metricList"></ul>
+        <div class="hint">
+          <span>ℹ</span>
+          <span>Serve this page over HTTP, for example <code>python3 -m http.server 8765</code>, then open <code>/tests/performance-test.html</code>.</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <p class="foot">Budgets: boot &lt; 3 s · DOM &lt; 1.8k nodes · CSS &lt; 900 rules · payload &lt; 512 KB · idle ≥ 50 fps · interactions ≥ 45 fps · settings switch &lt; 180 ms · storage &lt; 60 KB · heap &lt; 64 MB. Frame-rate checks are skipped if the browser suspends rendering (background or occluded tab). Temporary test data is removed and the previous localStorage snapshot is restored when the run ends.</p>
+
+<script>
+(function () {
+  "use strict";
+
+  const PREFIX = "studyDesk:";
+  const APP_URL = new URL("../newtab.html?perf-test=1", location.href).href;
+  const $ = (sel) => document.querySelector(sel);
+
+  const BUDGETS = {
+    boot: 3000,
+    nodes: 1800,
+    rules: 900,
+    payload: 512 * 1024,
+    storage: 60 * 1024,
+    idleFps: 50,
+    idleDropped: 12,
+    interactFps: 45,
+    worstFrame: 120,
+    switchMs: 180,
+    longTasks: 20,
+    maxLongTask: 300,
+    totalBlocking: 900,
+    leakNodes: 60,
+    heap: 64 * 1024 * 1024
+  };
+
+  const listEl = $("#testList");
+  const metricEl = $("#metricList");
+  const stats = {
+    total: $("#statTotal"),
+    pass: $("#statPass"),
+    fail: $("#statFail"),
+    skip: $("#statSkip"),
+    time: $("#statTime"),
+    status: $("#statusText"),
+    bar: $("#progressBar")
+  };
+
+  let frame = null;
+  let frameWin = null;
+  let frameDoc = null;
+  let runtimeErrors = [];
+  let longTasks = [];
+  let longTaskObserver = null;
+  let runToken = 0;
+  let measures = {};
+
+  /* ---------------- storage isolation ---------------- */
+
+  function snapshotStorage() {
+    const snapshot = {};
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(PREFIX)) snapshot[key] = localStorage.getItem(key);
+    }
+    return snapshot;
+  }
+
+  function clearStudyStorage() {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(PREFIX)) keys.push(key);
+    }
+    keys.forEach((key) => localStorage.removeItem(key));
+  }
+
+  function restoreStorage(snapshot) {
+    clearStudyStorage();
+    Object.keys(snapshot || {}).forEach((key) => {
+      try { localStorage.setItem(key, snapshot[key]); } catch (e) { /* ignore */ }
+    });
+  }
+
+  /* ---------------- harness helpers ---------------- */
+
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  function waitFor(fn, timeout, label) {
+    return new Promise((resolve, reject) => {
+      const start = performance.now();
+      (function poll() {
+        let value = false;
+        try { value = fn(); } catch (e) { value = false; }
+        if (value) { resolve(value); return; }
+        if (performance.now() - start > timeout) {
+          reject(new Error("Timed out waiting for " + (label || "condition")));
+          return;
+        }
+        setTimeout(poll, 30);
+      })();
+    });
+  }
+
+  function assert(condition, message) {
+    if (!condition) throw new Error(message || "Assertion failed");
+  }
+
+  function q(sel) { return frameDoc.querySelector(sel); }
+  function qa(sel) { return Array.from(frameDoc.querySelectorAll(sel)); }
+  function text(sel) { const el = q(sel); return el ? el.textContent.trim() : ""; }
+  function click(sel) {
+    const el = q(sel);
+    assert(el, "Missing element: " + sel);
+    el.click();
+    return el;
+  }
+  function fire(el, type) {
+    assert(el, "Missing element for " + type);
+    el.dispatchEvent(new Event(type, { bubbles: true }));
+  }
+
+  function round(value, digits) {
+    const d = digits === undefined ? 0 : digits;
+    return Number(Number(value).toFixed(d));
+  }
+
+  function sampleFrames(win, durationMs) {
+    return new Promise((resolve) => {
+      const deltas = [];
+      let prev = null;
+      let start = null;
+      let settled = false;
+      let timer = null;
+      function finish() {
+        if (settled) return;
+        settled = true;
+        if (timer) clearTimeout(timer);
+        resolve(deltas);
+      }
+      function tick(ts) {
+        if (settled) return;
+        if (start === null) start = ts;
+        if (prev !== null) deltas.push(ts - prev);
+        prev = ts;
+        if (ts - start < durationMs) win.requestAnimationFrame(tick);
+        else finish();
+      }
+      win.requestAnimationFrame(tick);
+      /* Failsafe: if the browser throttles rAF (background tab, occluded
+         window) resolve with whatever arrived instead of hanging the suite. */
+      timer = setTimeout(finish, durationMs * 3 + 1200);
+    });
+  }
+
+  function frameStats(deltas) {
+    if (!deltas.length) return { frames: 0, fps: 0, worst: 0, p95: 0, dropped: 0, median: 0, suspended: 0 };
+    /* A gap longer than 400 ms means the renderer was suspended (occluded
+       window, background tab), not that the app dropped a frame. Exclude
+       those gaps and report them separately. */
+    const suspended = deltas.filter((d) => d > 400).length;
+    const active = deltas.filter((d) => d <= 400);
+    if (!active.length) return { frames: 0, fps: 0, worst: 0, p95: 0, dropped: 0, median: 0, suspended: suspended };
+    const sorted = active.slice().sort((a, b) => a - b);
+    const sum = active.reduce((a, b) => a + b, 0);
+    const median = sorted[Math.floor(sorted.length / 2)];
+    const worst = sorted[sorted.length - 1];
+    const p95 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))];
+    return {
+      frames: active.length,
+      fps: round(1000 / (sum / active.length), 1),
+      worst: round(worst, 1),
+      p95: round(p95, 1),
+      median: round(median, 1),
+      dropped: active.filter((d) => d > Math.max(28, median * 1.8)).length,
+      suspended: suspended
+    };
+  }
+
+  function mutationWait(win, target, options, timeout) {
+    return new Promise((resolve, reject) => {
+      const obs = new win.MutationObserver(() => {
+        obs.disconnect();
+        resolve();
+      });
+      obs.observe(target, options);
+      setTimeout(() => {
+        obs.disconnect();
+        reject(new Error("Timed out waiting for mutation"));
+      }, timeout || 2000);
+    });
+  }
+
+  async function bringFrameIntoView() {
+    const holder = $("#previewFrame");
+    if (!holder) return;
+    holder.scrollIntoView({ block: "center", inline: "nearest" });
+    await new Promise((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        resolve();
+      };
+      requestAnimationFrame(() => requestAnimationFrame(finish));
+      /* If rAF is suspended (occluded window), don't stall the suite. */
+      setTimeout(finish, 400);
+    });
+    await sleep(120);
+  }
+
+  function layoutPreview(width, height) {
+    const holder = $("#previewFrame");
+    if (!holder || !frame) return;
+    const boxWidth = holder.clientWidth || 400;
+    const scale = Math.min(1, boxWidth / width);
+    holder.style.height = Math.round((height || 900) * scale) + "px";
+    frame.style.transform = "scale(" + scale + ")";
+    $("#previewLabel").textContent = width + " × " + height;
+  }
+
+  window.addEventListener("resize", () => {
+    if (!frame) return;
+    layoutPreview(1280, 900);
+  });
+
+  /* ---------------- app frame ---------------- */
+
+  async function createAppFrame() {
+    if (frame) frame.remove();
+    runtimeErrors = [];
+    longTasks = [];
+    $("#previewEmpty")?.remove();
+
+    frame = document.createElement("iframe");
+    frame.id = "appFramePerf";
+    frame.title = "Study Deck performance target";
+    frame.style.width = "1280px";
+    frame.style.height = "900px";
+    frame.style.transformOrigin = "top left";
+    frame.style.border = "0";
+    frame.style.position = "absolute";
+    frame.style.top = "0";
+    frame.style.left = "0";
+
+    const loaded = new Promise((resolve, reject) => {
+      frame.addEventListener("load", resolve, { once: true });
+      frame.addEventListener("error", reject, { once: true });
+    });
+
+    const start = performance.now();
+    frame.src = APP_URL;
+    $("#previewFrame").appendChild(frame);
+    layoutPreview(1280, 900);
+    await loaded;
+
+    frameWin = frame.contentWindow;
+    frameDoc = frame.contentDocument;
+
+    frameWin.addEventListener("error", (event) => {
+      runtimeErrors.push(String(event.message || "Script error"));
+    });
+    frameWin.addEventListener("unhandledrejection", (event) => {
+      runtimeErrors.push("Unhandled rejection: " + String(event.reason));
+    });
+
+    await waitFor(() => {
+      const home = frameDoc.querySelector("#homeClock .clock-time");
+      const floating = frameDoc.querySelector("#clockBlock .clock-time");
+      return home && floating && home.textContent.trim() !== "—" && floating.textContent.trim() !== "—";
+    }, 8000, "Study Deck boot");
+
+    const bootMs = performance.now() - start;
+
+    if (frameWin.PerformanceObserver) {
+      try {
+        longTaskObserver = new frameWin.PerformanceObserver((list) => {
+          list.getEntries().forEach((entry) => {
+            longTasks.push({ start: entry.startTime, duration: entry.duration });
+          });
+        });
+        longTaskObserver.observe({ entryTypes: ["longtask"] });
+      } catch (e) {
+        longTaskObserver = null;
+      }
+    }
+
+    const nav = frameWin.performance.getEntriesByType("navigation")[0] || null;
+    return {
+      bootMs: round(bootMs, 1),
+      domInteractive: nav ? round(nav.domInteractive, 1) : null,
+      dcl: nav ? round(nav.domContentLoadedEventEnd, 1) : null,
+      load: nav ? round(nav.loadEventEnd, 1) : null,
+      responseEnd: nav ? round(nav.responseEnd, 1) : null
+    };
+  }
+
+  /* ---------------- measurement output ---------------- */
+
+  function addMetric(label, value, tone) {
+    const li = document.createElement("li");
+    li.className = "metric";
+    const name = document.createElement("span");
+    name.textContent = label;
+    const val = document.createElement("b");
+    val.textContent = value;
+    if (tone) val.className = tone;
+    li.append(name, val);
+    metricEl.appendChild(li);
+  }
+
+  function resetMetrics() {
+    metricEl.innerHTML = "";
+    measures = {};
+  }
+
+  function resetOutput() {
+    listEl.innerHTML = "";
+    stats.total.textContent = "0";
+    stats.pass.textContent = "0";
+    stats.fail.textContent = "0";
+    stats.skip.textContent = "0";
+    stats.time.textContent = "0 ms";
+    stats.bar.style.width = "0%";
+    stats.status.textContent = "Starting…";
+  }
+
+  function addRow(name) {
+    const li = document.createElement("li");
+    li.className = "test run";
+    li.innerHTML =
+      '<span class="mark">•</span>' +
+      '<div><div class="test-name"></div><div class="test-detail">Measuring…</div></div>' +
+      '<span class="test-time"></span>';
+    li.querySelector(".test-name").textContent = name;
+    listEl.appendChild(li);
+    listEl.scrollTop = listEl.scrollHeight;
+    return li;
+  }
+
+  function finishRow(li, passed, detail, ms, skipped) {
+    li.classList.remove("run");
+    const status = skipped ? "skip" : passed ? "pass" : "fail";
+    li.classList.add(status);
+    li.querySelector(".mark").textContent = skipped ? "–" : passed ? "✓" : "✕";
+    li.querySelector(".test-detail").textContent = detail || (skipped ? "Skipped" : passed ? "Passed" : "Failed");
+    li.querySelector(".test-time").textContent = Math.round(ms) + " ms";
+  }
+
+  function toneFor(ok, warn) {
+    if (!ok) return "bad";
+    return warn ? "warn" : "good";
+  }
+
+  /* ---------------- tests ---------------- */
+
+  async function runTests() {
+    const tests = [];
+    const test = (name, fn) => tests.push({ name, fn });
+
+    test("Cold boot completes inside the budget", async () => {
+      const info = measures.boot;
+      assert(info, "Boot measurements missing");
+      addMetric("Cold boot (iframe → clock)", info.bootMs + " ms", toneFor(info.bootMs < BUDGETS.boot));
+      if (info.dcl !== null) addMetric("DOMContentLoaded", info.dcl + " ms");
+      if (info.load !== null) addMetric("Window load", info.load + " ms");
+      assert(info.bootMs < BUDGETS.boot, "Boot took " + info.bootMs + " ms (budget " + BUDGETS.boot + " ms)");
+      return "Clocks live in " + info.bootMs + " ms · DCL " + info.dcl + " ms";
+    });
+
+    test("DOM stays lean", async () => {
+      const nodes = frameDoc.getElementsByTagName("*").length;
+      measures.nodes = nodes;
+      addMetric("DOM elements", nodes + " nodes", toneFor(nodes < BUDGETS.nodes));
+      assert(nodes < BUDGETS.nodes, "DOM has " + nodes + " elements (budget " + BUDGETS.nodes + ")");
+      return nodes + " elements across all sections";
+    });
+
+    test("CSS and JS payload is lightweight", async () => {
+      const rules = Array.from(frameDoc.styleSheets).reduce((sum, sheet) => {
+        try { return sum + sheet.cssRules.length; } catch (e) { return sum; }
+      }, 0);
+      const resources = frameWin.performance.getEntriesByType("resource");
+      const payload = resources.reduce((sum, entry) => {
+        const size = entry.decodedBodySize || entry.transferSize || 0;
+        return sum + size;
+      }, 0);
+      measures.rules = rules;
+      measures.payload = payload;
+      addMetric("CSS rules", rules + " rules", toneFor(rules < BUDGETS.rules));
+      addMetric("Assets decoded", Math.round(payload / 1024) + " KB", toneFor(payload < BUDGETS.payload));
+      assert(rules < BUDGETS.rules, "CSS has " + rules + " rules (budget " + BUDGETS.rules + ")");
+      assert(payload < BUDGETS.payload, "Payload is " + Math.round(payload / 1024) + " KB (budget " + Math.round(BUDGETS.payload / 1024) + " KB)");
+      return rules + " rules · " + Math.round(payload / 1024) + " KB of assets";
+    });
+
+    test("Saved state stays compact", async () => {
+      const snapshot = snapshotStorage();
+      const bytes = Object.keys(snapshot).reduce((sum, key) => sum + key.length + snapshot[key].length, 0);
+      measures.storage = bytes;
+      const readable = bytes > 1024 ? Math.round(bytes / 1024) + " KB" : bytes + " B";
+      addMetric("localStorage state", readable, toneFor(bytes < BUDGETS.storage));
+      assert(bytes < BUDGETS.storage, "Stored state is " + readable + " (budget " + Math.round(BUDGETS.storage / 1024) + " KB)");
+      return Object.keys(snapshot).length + " keys · " + readable;
+    });
+
+    test("Idle clock ticking holds a smooth frame rate", async () => {
+      await bringFrameIntoView();
+      await sleep(200);
+      let s = frameStats(await sampleFrames(frameWin, 1800));
+      if (s.frames < 10) {
+        await bringFrameIntoView();
+        await sleep(350);
+        const retry = frameStats(await sampleFrames(frameWin, 1800));
+        if (retry.frames > s.frames) s = retry;
+      }
+      measures.idle = s;
+      if (s.frames < 10) {
+        addMetric("Idle frame rate", "unavailable", "warn");
+        return { skip: "browser suspended rendering; frame timing unavailable" };
+      }
+      addMetric("Idle average", s.fps + " fps", toneFor(s.fps >= BUDGETS.idleFps));
+      addMetric("Idle dropped frames", s.dropped + " / " + s.frames, toneFor(s.dropped <= BUDGETS.idleDropped));
+      addMetric("Idle worst frame", s.worst + " ms", toneFor(s.worst < BUDGETS.worstFrame));
+      if (s.suspended) addMetric("Browser paused gaps", s.suspended + " (ignored)", "warn");
+      assert(s.fps >= BUDGETS.idleFps, "Idle average " + s.fps + " fps (min " + BUDGETS.idleFps + ")");
+      assert(s.dropped <= BUDGETS.idleDropped, s.dropped + " dropped frames (max " + BUDGETS.idleDropped + ")");
+      return s.fps + " fps · " + s.dropped + " dropped / " + s.frames + " frames";
+    });
+
+    test("Rail navigation responds quickly", async () => {
+      const tabs = ["todo", "tracker", "calendar", "notes", "review", "home", "todo", "tracker", "calendar", "home"];
+      let times = [];
+      /* Two passes: the second avoids JIT and first-render warm-up noise. */
+      for (let pass = 0; pass < 2; pass += 1) {
+        const passTimes = [];
+        for (const tab of tabs) {
+          const btn = q('#tabbar [data-tab="' + tab + '"]');
+          assert(btn, "Missing tab " + tab);
+          const start = performance.now();
+          btn.click();
+          void frameDoc.body.offsetHeight;
+          passTimes.push(performance.now() - start);
+          await sleep(90);
+        }
+        times = passTimes;
+        await sleep(300);
+      }
+      const worst = Math.max.apply(null, times);
+      const avg = times.reduce((a, b) => a + b, 0) / times.length;
+      measures.navResponse = { worst: round(worst, 1), avg: round(avg, 1) };
+      addMetric("Tab switch (worst)", round(worst, 1) + " ms", toneFor(worst < 80));
+      addMetric("Tab switch (average)", round(avg, 1) + " ms", toneFor(avg < 40));
+      assert(worst < 80, "Slowest tab switch took " + round(worst, 1) + " ms (budget 80 ms)");
+      assert(avg < 40, "Average tab switch took " + round(avg, 1) + " ms (budget 40 ms)");
+      return "worst " + round(worst, 1) + " ms · average " + round(avg, 1) + " ms over " + tabs.length + " switches";
+    });
+
+    test("Panel transitions stay smooth", async () => {
+      await bringFrameIntoView();
+      /* Let the previous stress pass settle and warm first-paint layers.
+         Cold-start cost is covered by the boot budget above. */
+      click('#tabbar [data-tab="todo"]');
+      await sleep(450);
+      click('#tabbar [data-tab="home"]');
+      await sleep(450);
+
+      const plan = ["todo", "tracker", "review", "home"];
+      const results = [];
+
+      async function sampleTransition(tab) {
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          const sampling = sampleFrames(frameWin, 780);
+          click('#tabbar [data-tab="' + tab + '"]');
+          const s = frameStats(await sampling);
+          if (s.frames >= 6) {
+            return { tab: tab, fps: s.fps, worst: s.worst, dropped: s.dropped, frames: s.frames, suspended: s.suspended };
+          }
+          click('#tabbar [data-tab="' + (tab === "home" ? "todo" : "home") + '"]');
+          await sleep(250);
+        }
+        return null;
+      }
+
+      for (const tab of plan) {
+        const result = await sampleTransition(tab);
+        if (result) results.push(result);
+        await sleep(120);
+      }
+      if (!results.length) {
+        addMetric("Transition frame rate", "unavailable", "warn");
+        return { skip: "browser suspended rendering; frame timing unavailable" };
+      }
+
+      const worstFps = Math.min.apply(null, results.map((r) => r.fps));
+      const worstFrame = Math.max.apply(null, results.map((r) => r.worst));
+      const worstDropped = Math.max.apply(null, results.map((r) => r.dropped));
+      const suspended = results.reduce((sum, r) => sum + r.suspended, 0);
+      measures.navigation = { worstFps: worstFps, worstFrame: worstFrame, transitions: results };
+      addMetric("Transition minimum", worstFps + " fps", toneFor(worstFps >= BUDGETS.interactFps));
+      addMetric("Transition worst frame", worstFrame + " ms", toneFor(worstFrame < BUDGETS.worstFrame));
+      addMetric("Transition dropped frames", worstDropped + " max", toneFor(worstDropped <= 12));
+      if (suspended) addMetric("Browser paused gaps", suspended + " (ignored)", "warn");
+      assert(worstFps >= BUDGETS.interactFps, "Slowest panel transition averaged " + worstFps + " fps (min " + BUDGETS.interactFps + ")");
+      assert(worstFrame < BUDGETS.worstFrame, "Worst transition frame " + worstFrame + " ms (max " + BUDGETS.worstFrame + " ms)");
+      assert(worstDropped <= 12, worstDropped + " dropped frames during a transition (max 12)");
+      return worstFps + " fps min · worst frame " + worstFrame + " ms across " + results.length + " transitions";
+    });
+
+    test("Clock face switches render quickly", async () => {
+      click("#railSettingsBtn");
+      await sleep(120);
+      click('#settingsTabs [data-settings-tab="appearance"]');
+      await sleep(100);
+      const styles = ["stacked", "analog", "chip", "minimal", "digital"];
+      const times = [];
+      for (const style of styles) {
+        const btn = q('[data-clock-style="' + style + '"]');
+        assert(btn, "Missing clock choice " + style);
+        const start = performance.now();
+        const changed = mutationWait(frameWin, q("#homeClock"), { attributes: true, attributeFilter: ["data-style"] }, 2000);
+        btn.click();
+        await changed;
+        times.push(performance.now() - start);
+        await sleep(40);
+      }
+      const worst = Math.max.apply(null, times);
+      const avg = times.reduce((a, b) => a + b, 0) / times.length;
+      measures.switchMs = round(worst, 1);
+      addMetric("Clock switch (worst)", round(worst, 1) + " ms", toneFor(worst < BUDGETS.switchMs));
+      addMetric("Clock switch (average)", round(avg, 1) + " ms", toneFor(avg < BUDGETS.switchMs / 2));
+      assert(worst < BUDGETS.switchMs, "Slowest clock switch took " + round(worst, 1) + " ms (budget " + BUDGETS.switchMs + " ms)");
+      return "worst " + round(worst, 1) + " ms across " + styles.length + " faces";
+    });
+
+    test("Surface changes repaint promptly", async () => {
+      const styles = ["frosted", "glass", "solid"];
+      const times = [];
+      for (const style of styles) {
+        const btn = q('[data-surface-choice="' + style + '"]');
+        assert(btn, "Missing surface choice " + style);
+        const start = performance.now();
+        const changed = mutationWait(frameWin, frameDoc.documentElement, { attributes: true, attributeFilter: ["data-surface"] }, 2000);
+        btn.click();
+        await changed;
+        times.push(performance.now() - start);
+        await sleep(60);
+      }
+      const worst = Math.max.apply(null, times);
+      measures.surfaceMs = round(worst, 1);
+      addMetric("Surface switch (worst)", round(worst, 1) + " ms", toneFor(worst < BUDGETS.switchMs));
+      assert(worst < BUDGETS.switchMs, "Slowest surface switch took " + round(worst, 1) + " ms (budget " + BUDGETS.switchMs + " ms)");
+      return "worst " + round(worst, 1) + " ms across " + styles.length + " surfaces";
+    });
+
+    test("Widget anchor transitions stay smooth", async () => {
+      click("#settingsDone");
+      await sleep(100);
+      click('#tabbar [data-tab="todo"]');
+      await sleep(150);
+      click("#railSettingsBtn");
+      await sleep(120);
+      click('#settingsTabs [data-settings-tab="layout"]');
+      await sleep(150);
+
+      const row = qa("#widgetPosList .widget-pos-row")[0];
+      assert(row, "Widget position row missing");
+      const cell = row.querySelector('.anchor-cell[data-ax="right"][data-ay="bottom"]');
+      assert(cell, "Anchor target missing");
+
+      await bringFrameIntoView();
+      const sampling = sampleFrames(frameWin, 700);
+      cell.click();
+      await sleep(520);
+      const s = frameStats(await sampling);
+      measures.widgetMove = s;
+
+      const widget = q('.widget[data-widget="clock"]');
+      assert(widget.style.left && widget.style.top, "Widget position was not applied");
+
+      if (s.frames < 6) {
+        click("#widgetReset");
+        await sleep(250);
+        addMetric("Widget motion", "unavailable", "warn");
+        return { skip: "browser suspended rendering; transition timing unavailable" };
+      }
+
+      const transition = frameWin.getComputedStyle(widget).transitionDuration;
+      assert(transition !== "0s", "Widget has no transition");
+      addMetric("Widget motion average", s.fps + " fps", toneFor(s.fps >= BUDGETS.interactFps));
+      addMetric("Widget motion worst", s.worst + " ms", toneFor(s.worst < BUDGETS.worstFrame));
+      assert(s.fps >= BUDGETS.interactFps, "Widget motion average " + s.fps + " fps (min " + BUDGETS.interactFps + ")");
+      assert(s.worst < BUDGETS.worstFrame, "Worst widget frame " + s.worst + " ms (max " + BUDGETS.worstFrame + " ms)");
+
+      click("#widgetReset");
+      await sleep(300);
+      return s.fps + " fps · worst " + s.worst + " ms · transition " + transition;
+    });
+
+    test("Reduced motion removes costly transitions", async () => {
+      const toggle = q('[data-setting="animations"]');
+      assert(toggle, "Animations toggle is missing");
+      toggle.checked = false;
+      fire(toggle, "change");
+      await sleep(150);
+      const panelDuration = frameWin.getComputedStyle(q(".tab-panel.active")).transitionDuration;
+      const durations = panelDuration.split(",").map((value) => parseFloat(value));
+      const fast = durations.every((value) => !Number.isNaN(value) && value <= 0.002);
+      toggle.checked = true;
+      fire(toggle, "change");
+      await sleep(150);
+      addMetric("Reduced motion panel", panelDuration, toneFor(fast));
+      assert(fast, "Transitions still active with motion off (" + panelDuration + ")");
+      return "Transitions collapse to " + panelDuration + " with motion off";
+    });
+
+    test("Repeated renders do not leak DOM nodes", async () => {
+      click("#settingsDone");
+      await sleep(80);
+      const before = frameDoc.getElementsByTagName("*").length;
+      click("#railSettingsBtn");
+      await sleep(100);
+      click('#settingsTabs [data-settings-tab="appearance"]');
+      await sleep(100);
+      const styles = ["digital", "analog", "stacked", "minimal", "chip"];
+      for (let i = 0; i < 24; i += 1) {
+        q('[data-clock-style="' + styles[i % styles.length] + '"]').click();
+        await sleep(20);
+      }
+      await sleep(180);
+      const after = frameDoc.getElementsByTagName("*").length;
+      const delta = after - before;
+      measures.leak = delta;
+      addMetric("DOM after 24 re-renders", delta >= 0 ? "+" + delta + " nodes" : delta + " nodes", toneFor(Math.abs(delta) <= BUDGETS.leakNodes));
+      assert(Math.abs(delta) <= BUDGETS.leakNodes, "DOM grew by " + delta + " nodes after repeated renders (max ±" + BUDGETS.leakNodes + ")");
+      click("#settingsDone");
+      await sleep(100);
+      return before + " → " + after + " nodes (" + (delta >= 0 ? "+" : "") + delta + ")";
+    });
+
+    test("JavaScript heap footprint is reasonable", async () => {
+      if (!frameWin.performance || !frameWin.performance.memory) {
+        addMetric("JS heap", "unavailable", "warn");
+        return "Skipped: performance.memory unavailable in this browser";
+      }
+      const used = frameWin.performance.memory.usedJSHeapSize;
+      const readable = round(used / (1024 * 1024), 1);
+      measures.heapMB = readable;
+      addMetric("JS heap", readable + " MB", toneFor(used < BUDGETS.heap));
+      assert(used < BUDGETS.heap, "Heap is " + readable + " MB (budget " + Math.round(BUDGETS.heap / (1024 * 1024)) + " MB)");
+      return readable + " MB in use";
+    });
+
+    test("No long blocking tasks dominate the run", async () => {
+      if (!longTaskObserver) {
+        addMetric("Long tasks", "unavailable", "warn");
+        return "Skipped: longtask observer unavailable in this browser";
+      }
+      const durations = longTasks.map((t) => t.duration);
+      const max = durations.length ? Math.max.apply(null, durations) : 0;
+      const tbt = durations.reduce((sum, d) => sum + Math.max(0, d - 50), 0);
+      measures.longTaskCount = durations.length;
+      measures.longTaskMax = round(max, 1);
+      measures.tbt = round(tbt, 1);
+      addMetric("Long tasks", durations.length + " over 50 ms", toneFor(durations.length <= BUDGETS.longTasks));
+      addMetric("Longest task", round(max, 1) + " ms", toneFor(max < BUDGETS.maxLongTask));
+      addMetric("Total blocking time", round(tbt, 1) + " ms", toneFor(tbt < BUDGETS.totalBlocking));
+      assert(durations.length <= BUDGETS.longTasks, durations.length + " long tasks (max " + BUDGETS.longTasks + ")");
+      assert(max < BUDGETS.maxLongTask, "Longest task " + round(max, 1) + " ms (max " + BUDGETS.maxLongTask + " ms)");
+      assert(tbt < BUDGETS.totalBlocking, "Total blocking time " + round(tbt, 1) + " ms (max " + BUDGETS.totalBlocking + " ms)");
+      return durations.length + " long tasks · max " + round(max, 1) + " ms · TBT " + round(tbt, 1) + " ms";
+    });
+
+    test("No script errors occurred during the run", async () => {
+      assert(runtimeErrors.length === 0, runtimeErrors.join(" · "));
+      return "0 runtime errors";
+    });
+
+    resetOutput();
+    const runStart = performance.now();
+    let passed = 0;
+    let failed = 0;
+    let skipped = 0;
+
+    for (let i = 0; i < tests.length; i += 1) {
+      const item = tests[i];
+      stats.status.textContent = "Running " + (i + 1) + " / " + tests.length + "…";
+      const row = addRow(item.name);
+      const start = performance.now();
+      try {
+        const detail = await item.fn();
+        const skipReason = detail && typeof detail === "object" && detail.skip;
+        finishRow(
+          row,
+          !skipReason,
+          skipReason ? "Skipped: " + skipReason : detail,
+          performance.now() - start,
+          !!skipReason
+        );
+        if (skipReason) skipped += 1;
+        else passed += 1;
+      } catch (error) {
+        finishRow(row, false, error && error.message ? error.message : String(error), performance.now() - start);
+        failed += 1;
+      }
+      stats.total.textContent = String(passed + failed + skipped);
+      stats.pass.textContent = String(passed);
+      stats.fail.textContent = String(failed);
+      stats.skip.textContent = String(skipped);
+      stats.bar.style.width = Math.round(((i + 1) / tests.length) * 100) + "%";
+    }
+
+    const duration = performance.now() - runStart;
+    stats.time.textContent = Math.round(duration) + " ms";
+    if (failed === 0) {
+      stats.status.textContent = skipped
+        ? "All " + passed + " measured checks passed · " + skipped + " skipped"
+        : "All " + passed + " checks passed";
+    } else {
+      stats.status.textContent = passed + " passed · " + failed + " failed" + (skipped ? " · " + skipped + " skipped" : "");
+    }
+    window.scrollTo({ top: 0, behavior: "auto" });
+
+    return {
+      status: failed === 0 ? "pass" : "fail",
+      total: passed + failed + skipped,
+      passed,
+      failed,
+      skipped,
+      durationMs: Math.round(duration),
+      budgets: BUDGETS,
+      metrics: measures,
+      tests: tests.map((item, index) => {
+        const row = listEl.children[index];
+        return {
+          name: item.name,
+          status: row.classList.contains("pass") ? "pass" : row.classList.contains("skip") ? "skip" : "fail",
+          detail: row.querySelector(".test-detail").textContent
+        };
+      })
+    };
+  }
+
+  /* ---------------- runner ---------------- */
+
+  async function run() {
+    const token = ++runToken;
+    const runButton = $("#runBtn");
+    runButton.disabled = true;
+    $("#openBtn").disabled = true;
+    window.__RESULTS__ = { status: "running" };
+    resetOutput();
+    resetMetrics();
+
+    const originalStorage = snapshotStorage();
+    clearStudyStorage();
+
+    try {
+      measures.boot = await createAppFrame();
+      if (token !== runToken) return;
+      const results = await runTests();
+      window.__RESULTS__ = results;
+      return results;
+    } catch (error) {
+      const message = error && error.message ? error.message : String(error);
+      stats.status.textContent = "Test run failed: " + message;
+      window.__RESULTS__ = { status: "error", error: message };
+      listEl.insertAdjacentHTML(
+        "beforeend",
+        '<li class="test fail"><span class="mark">✕</span><div><div class="test-name">Harness error</div><div class="test-detail"></div></div><span class="test-time"></span></li>'
+      );
+      listEl.querySelector("li:last-child .test-detail").textContent = message;
+      return window.__RESULTS__;
+    } finally {
+      if (longTaskObserver) {
+        try { longTaskObserver.disconnect(); } catch (e) { /* ignore */ }
+        longTaskObserver = null;
+      }
+      if (frame) frame.remove();
+      frame = null;
+      frameWin = null;
+      frameDoc = null;
+      await sleep(400);
+      restoreStorage(originalStorage);
+      runButton.disabled = false;
+      $("#openBtn").disabled = false;
+    }
+  }
+
+  $("#runBtn").addEventListener("click", run);
+  $("#openBtn").addEventListener("click", () => window.open(location.href, "_blank", "noopener"));
+
+  window.__RUN_PERF_TEST__ = run;
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => { run(); }, { once: true });
+  } else {
+    run();
+  }
+})();
+</script>
+</body>
+</html>

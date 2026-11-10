@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Study Deck — UI design test</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #141218;
+    --surface: #1d1b20;
+    --surface-2: #25232a;
+    --surface-3: #2f2c35;
+    --line: #49454f;
+    --text: #e6e0e9;
+    --muted: #b9b3c1;
+    --primary: #d0bcff;
+    --primary-2: #4f378b;
+    --ok: #7ee2a8;
+    --bad: #ffb4ab;
+    --warn: #f6d67c;
+    --radius: 20px;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background:
+      radial-gradient(900px 500px at -10% -20%, #3c2a63 0%, transparent 60%),
+      radial-gradient(700px 500px at 110% 0%, #4a2d3a 0%, transparent 55%),
+      var(--bg);
+    color: var(--text);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: 22px;
+  }
+  h1, h2, p { margin: 0; }
+  .top {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    background: #4a3a71;
+    color: #eadcff;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 12px var(--ok); }
+  h1 { margin-top: 9px; font-size: clamp(25px, 4vw, 36px); letter-spacing: -.03em; line-height: 1.1; }
+  .sub { margin-top: 7px; color: var(--muted); max-width: 74ch; font-size: 13px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--text);
+    padding: 10px 18px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .15s ease, background .15s ease, border-color .15s ease;
+  }
+  button:hover { background: var(--surface-3); border-color: #6f6878; }
+  button:active { transform: scale(.97); }
+  button.primary { background: var(--primary); border-color: var(--primary); color: #22103f; }
+  button.primary:hover { background: #e2d4ff; }
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 430px);
+    gap: 16px;
+    align-items: start;
+  }
+  @media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
+  .card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--surface) 82%, transparent);
+    box-shadow: 0 18px 55px rgba(0, 0, 0, .28);
+    overflow: hidden;
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .card-head h2 { font-size: 14px; letter-spacing: .02em; }
+  .card-head span { color: var(--muted); font-size: 11.5px; }
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    padding: 14px;
+  }
+  .stat {
+    padding: 12px 13px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface-2);
+    min-width: 0;
+  }
+  .stat b { display: block; font-size: 21px; line-height: 1.2; letter-spacing: -.02em; }
+  .stat small { display: block; color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-top: 2px; }
+  .stat.pass b { color: var(--ok); }
+  .stat.fail b { color: var(--bad); }
+  .progress { height: 5px; margin: 0 14px 12px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+  .progress > i { display: block; height: 100%; width: 0%; border-radius: inherit; background: linear-gradient(90deg, #a78bfa, #7ee2a8); transition: width .25s ease; }
+  .tests { list-style: none; margin: 0; padding: 0 10px 10px; max-height: 52vh; overflow: auto; }
+  .test {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: start;
+    padding: 10px 8px;
+    border-radius: 12px;
+  }
+  .test + .test { border-top: 1px solid #2c2932; }
+  .test:hover { background: #211f27; }
+  .mark {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--surface-3);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    margin-top: 1px;
+  }
+  .test.pass .mark { background: rgba(126, 226, 168, .14); color: var(--ok); }
+  .test.fail .mark { background: rgba(255, 180, 171, .14); color: var(--bad); }
+  .test.run .mark { background: rgba(208, 188, 255, .15); color: var(--primary); animation: pulse 1s ease infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .test-name { font-size: 12.8px; font-weight: 600; }
+  .test-detail { margin-top: 2px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+  .test.fail .test-detail { color: var(--bad); }
+  .test-time { color: var(--muted); font: 10.5px var(--mono); padding-top: 3px; }
+  .preview-body { padding: 12px; }
+  .preview-frame {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #141218;
+  }
+  .preview-frame iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1280px;
+    height: 900px;
+    border: 0;
+    transform-origin: top left;
+  }
+  .preview-empty {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .hint {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 11px 13px;
+    border: 1px dashed var(--line);
+    border-radius: 12px;
+    color: var(--muted);
+    font-size: 11.5px;
+    margin-top: 10px;
+  }
+  .hint code { font-family: var(--mono); color: var(--primary); }
+  .foot { margin-top: 14px; color: #8d8796; font-size: 11px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+  <header class="top">
+    <div>
+      <span class="eyebrow"><span class="dot"></span> UI design test</span>
+      <h1>Study Deck interface checks</h1>
+      <p class="sub">Automated checks for the Home dashboard, clock faces, widget placement, glass surfaces, settings, responsiveness and accessibility. The live app runs in an isolated preview frame and your saved settings are restored afterwards.</p>
+    </div>
+    <div class="actions">
+      <button type="button" id="runBtn" class="primary">Run UI test</button>
+      <button type="button" id="openBtn">Open test in new tab</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <section class="card" aria-label="UI test results">
+      <div class="card-head">
+        <h2>Results</h2>
+        <span id="statusText">Waiting to start…</span>
+      </div>
+      <div class="summary">
+        <div class="stat"><b id="statTotal">0</b><small>Tests</small></div>
+        <div class="stat pass"><b id="statPass">0</b><small>Passed</small></div>
+        <div class="stat fail"><b id="statFail">0</b><small>Failed</small></div>
+        <div class="stat"><b id="statTime">0 ms</b><small>Duration</small></div>
+      </div>
+      <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+      <ul class="tests" id="testList" aria-live="polite"></ul>
+    </section>
+
+    <aside class="card" aria-label="Live preview">
+      <div class="card-head">
+        <h2>Live preview</h2>
+        <span id="previewLabel">1280 × 900</span>
+      </div>
+      <div class="preview-body">
+        <div class="preview-frame" id="previewFrame">
+          <div class="preview-empty" id="previewEmpty">Preview starts with the test run</div>
+        </div>
+        <div class="hint">
+          <span>ℹ</span>
+          <span>Run this page from the local preview server, for example <code>python3 -m http.server 8765</code>, then open <code>/tests/ui-test.html</code>.</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <p class="foot">Tests operate on <code>newtab.html</code> in the same folder tree. Temporary test data is removed and the previous localStorage snapshot is restored when the run ends.</p>
+
+<script>
+(function () {
+  "use strict";
+
+  const PREFIX = "studyDesk:";
+  const APP_URL = new URL("../newtab.html?ui-test=1", location.href).href;
+  const $ = (sel) => document.querySelector(sel);
+
+  const listEl = $("#testList");
+  const stats = {
+    total: $("#statTotal"),
+    pass: $("#statPass"),
+    fail: $("#statFail"),
+    time: $("#statTime"),
+    status: $("#statusText"),
+    bar: $("#progressBar")
+  };
+
+  let frame = null;
+  let frameWin = null;
+  let frameDoc = null;
+  let runtimeErrors = [];
+  let runToken = 0;
+
+  /* ---------------- storage isolation ---------------- */
+
+  function snapshotStorage() {
+    const snapshot = {};
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(PREFIX)) snapshot[key] = localStorage.getItem(key);
+    }
+    return snapshot;
+  }
+
+  function clearStudyStorage() {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(PREFIX)) keys.push(key);
+    }
+    keys.forEach((key) => localStorage.removeItem(key));
+  }
+
+  function restoreStorage(snapshot) {
+    clearStudyStorage();
+    Object.keys(snapshot || {}).forEach((key) => {
+      try { localStorage.setItem(key, snapshot[key]); } catch (e) { /* ignore */ }
+    });
+  }
+
+  /* ---------------- harness helpers ---------------- */
+
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  function waitFor(fn, timeout, label) {
+    return new Promise((resolve, reject) => {
+      const start = performance.now();
+      (function poll() {
+        let value = false;
+        try { value = fn(); } catch (e) { value = false; }
+        if (value) { resolve(value); return; }
+        if (performance.now() - start > timeout) {
+          reject(new Error("Timed out waiting for " + (label || "condition")));
+          return;
+        }
+        setTimeout(poll, 40);
+      })();
+    });
+  }
+
+  function assert(condition, message) {
+    if (!condition) throw new Error(message || "Assertion failed");
+  }
+
+  function q(sel) { return frameDoc.querySelector(sel); }
+  function qa(sel) { return Array.from(frameDoc.querySelectorAll(sel)); }
+  function text(sel) { const el = q(sel); return el ? el.textContent.trim() : ""; }
+  function click(sel) {
+    const el = q(sel);
+    assert(el, "Missing element: " + sel);
+    el.click();
+    return el;
+  }
+  function fire(el, type) {
+    assert(el, "Missing element for " + type);
+    el.dispatchEvent(new Event(type, { bubbles: true }));
+  }
+  async function frameWidth(width, height) {
+    frame.style.width = width + "px";
+    frame.style.height = (height || 900) + "px";
+    layoutPreview(width, height || 900);
+    await sleep(120);
+  }
+
+  function layoutPreview(width, height) {
+    const holder = $("#previewFrame");
+    if (!holder || !frame) return;
+    const boxWidth = holder.clientWidth || 400;
+    const scale = Math.min(1, boxWidth / width);
+    holder.style.height = Math.round(height * scale) + "px";
+    frame.style.transform = "scale(" + scale + ")";
+    $("#previewLabel").textContent = width + " × " + height;
+  }
+
+  window.addEventListener("resize", () => {
+    if (!frame) return;
+    layoutPreview(parseFloat(frame.style.width) || 1280, parseFloat(frame.style.height) || 900);
+  });
+
+  /* ---------------- app frame ---------------- */
+
+  async function createAppFrame() {
+    if (frame) frame.remove();
+    runtimeErrors = [];
+    $("#previewEmpty")?.remove();
+
+    frame = document.createElement("iframe");
+    frame.id = "appFrame";
+    frame.title = "Study Deck UI under test";
+    frame.style.width = "1280px";
+    frame.style.height = "900px";
+    frame.style.transformOrigin = "top left";
+    frame.style.border = "0";
+    frame.style.position = "absolute";
+    frame.style.top = "0";
+    frame.style.left = "0";
+
+    const loaded = new Promise((resolve, reject) => {
+      frame.addEventListener("load", resolve, { once: true });
+      frame.addEventListener("error", reject, { once: true });
+    });
+    frame.src = APP_URL;
+    $("#previewFrame").appendChild(frame);
+    layoutPreview(1280, 900);
+    await loaded;
+
+    frameWin = frame.contentWindow;
+    frameDoc = frame.contentDocument;
+
+    frameWin.addEventListener("error", (event) => {
+      runtimeErrors.push(String(event.message || "Script error"));
+    });
+    frameWin.addEventListener("unhandledrejection", (event) => {
+      runtimeErrors.push("Unhandled rejection: " + String(event.reason));
+    });
+
+    await waitFor(() => {
+      const clock = frameDoc.querySelector("#homeClock .clock-time");
+      const floating = frameDoc.querySelector("#clockBlock .clock-time");
+      return clock && floating && clock.textContent.trim() !== "—" && floating.textContent.trim() !== "—";
+    }, 7000, "Study Deck boot");
+    await sleep(250);
+  }
+
+  /* ---------------- output ---------------- */
+
+  function resetOutput() {
+    listEl.innerHTML = "";
+    stats.total.textContent = "0";
+    stats.pass.textContent = "0";
+    stats.fail.textContent = "0";
+    stats.time.textContent = "0 ms";
+    stats.bar.style.width = "0%";
+    stats.status.textContent = "Starting…";
+  }
+
+  function addRow(name) {
+    const li = document.createElement("li");
+    li.className = "test run";
+    li.innerHTML =
+      '<span class="mark">•</span>' +
+      '<div><div class="test-name"></div><div class="test-detail">Running…</div></div>' +
+      '<span class="test-time"></span>';
+    li.querySelector(".test-name").textContent = name;
+    listEl.appendChild(li);
+    listEl.scrollTop = listEl.scrollHeight;
+    return li;
+  }
+
+  function finishRow(li, passed, detail, ms) {
+    li.classList.remove("run");
+    li.classList.add(passed ? "pass" : "fail");
+    li.querySelector(".mark").textContent = passed ? "✓" : "✕";
+    li.querySelector(".test-detail").textContent = detail || (passed ? "Passed" : "Failed");
+    li.querySelector(".test-time").textContent = Math.round(ms) + " ms";
+  }
+
+  /* ---------------- tests ---------------- */
+
+  async function runTests() {
+    const tests = [];
+    const test = (name, fn) => tests.push({ name, fn });
+
+    test("App boots on the Home tab", async () => {
+      assert(q('.tab-panel.active[data-panel="home"]'), "Home panel is not active");
+      assert(q('#tabbar [data-tab="home"]').classList.contains("active"), "Home rail item is not active");
+      assert(frameDoc.readyState === "complete", "Document is not complete");
+      return "Home is the default tab";
+    });
+
+    test("Home hero shows clock, greeting and search", async () => {
+      const clock = text("#homeClock .clock-time");
+      const date = text("#homeClock .clock-date");
+      assert(/^\d{1,2}:\d{2}/.test(clock), "Clock time is missing: " + clock);
+      assert(date.length > 4, "Clock date is missing");
+      assert(text("#homeGreeting").length > 3, "Greeting is missing");
+      assert(text("#homeSummary").length > 3, "Summary line is missing");
+      assert(q("#homeSearchInput").placeholder.includes("Search"), "Search placeholder is missing");
+      assert(text("#homeSearchForm .home-search-go").includes("Search"), "Search button label is missing");
+      return "Time “" + clock + "” · “" + text("#homeGreeting") + "”";
+    });
+
+    test("Home cards are present and visible", async () => {
+      assert(!q("#homeTasksCard").hidden, "Tasks card is hidden");
+      assert(!q("#homeFocusCard").hidden, "Focus card is hidden");
+      assert(q("#homeTaskForm") && q("#homePomoStart"), "Task/focus controls are missing");
+      assert(qa("#homeQuickLinks .home-link").length >= 4, "Quick links are missing");
+      return qa("#homeQuickLinks .home-link").length + " quick-link chips";
+    });
+
+    test("Floating clock/search hide on Home", async () => {
+      assert(q('.widget[data-widget="clock"]').hidden, "Floating clock is visible on Home");
+      assert(q('.widget[data-widget="search"]').hidden, "Floating search is visible on Home");
+      assert(!q('.widget[data-widget="actions"]'), "Quick actions widget should have been removed");
+      return "Duplicate widgets stay out of the way";
+    });
+
+    test("Quick-add creates a task in Home and the study log", async () => {
+      const input = q("#homeTaskInput");
+      const taskText = "UI test · revise organic chemistry";
+      input.value = taskText;
+      fire(q("#homeTaskForm"), "submit");
+      await sleep(120);
+      assert(qa("#homeTaskList .home-task-item").length === 1, "Home task was not created");
+      assert(text("#homeTaskList .home-task-text") === taskText, "Task text does not match");
+      assert(qa("#todoList .todo-item").length === 1, "Task did not reach the study log");
+      assert(text("#homeTaskCount").includes("1"), "Task count did not update");
+      return "Home and To-do stay in sync";
+    });
+
+    test("Completing a task updates both views", async () => {
+      click("#homeTaskList .home-task-item .check");
+      await sleep(120);
+      assert(q("#homeTaskList .home-task-item").classList.contains("done"), "Home task was not marked done");
+      assert(q("#todoList .todo-item").classList.contains("done"), "Study-log task was not marked done");
+      assert(/done/i.test(text("#homeSummary")), "Summary did not update");
+      return "Completion is mirrored instantly";
+    });
+
+    test("Deleting a task cleans up both views", async () => {
+      click("#homeTaskList .home-task-item .del-btn");
+      await sleep(120);
+      assert(qa("#homeTaskList .home-task-item").length === 0, "Home task was not deleted");
+      assert(qa("#todoList .todo-item").length === 0, "Study-log task was not deleted");
+      return "No orphaned tasks";
+    });
+
+    test("Rail navigation switches every section", async () => {
+      const tabs = ["todo", "tracker", "calendar", "notes", "review", "home"];
+      for (const tab of tabs) {
+        click('#tabbar [data-tab="' + tab + '"]');
+        await sleep(80);
+        assert(q('.tab-panel.active[data-panel="' + tab + '"]'), "Panel did not switch to " + tab);
+        assert(q('#tabbar [data-tab="' + tab + '"]').classList.contains("active"), "Rail state wrong for " + tab);
+      }
+      click('#tabbar [data-tab="todo"]');
+      await sleep(80);
+      assert(!q('.widget[data-widget="clock"]').hidden, "Floating clock did not return outside Home");
+      return tabs.length + " sections verified";
+    });
+
+    test("Clock picker offers five Material You faces", async () => {
+      click("#railSettingsBtn");
+      await sleep(120);
+      assert(q("#settingsDialog").open, "Settings dialog did not open");
+      const choices = qa("#clockChoices [data-clock-style]");
+      assert(choices.length === 5, "Expected 5 clock faces, found " + choices.length);
+      const names = choices.map((c) => c.querySelector(".cp-name").textContent).join(", ");
+      return names;
+    });
+
+    test("Switching to Analog renders both clocks", async () => {
+      click('[data-clock-style="analog"]');
+      await sleep(140);
+      assert(q("#homeClock svg.analog"), "Home analog clock is missing");
+      assert(q("#clockBlock svg.analog"), "Floating analog clock is missing");
+      assert(q("#homeClock").dataset.style === "analog", "Clock style attribute is wrong");
+      return "SVG hands and face render correctly";
+    });
+
+    test("Digital seconds and date can be turned off", async () => {
+      click('[data-clock-style="digital"]');
+      await sleep(120);
+      const dateToggle = q('[data-setting="clockShowDate"]');
+      dateToggle.checked = false;
+      fire(dateToggle, "change");
+      await sleep(120);
+      assert(!q("#homeClock .clock-date"), "Date still renders after turning it off");
+      dateToggle.checked = true;
+      fire(dateToggle, "change");
+      await sleep(120);
+      assert(q("#homeClock .clock-date"), "Date did not return");
+
+      const secToggle = q('[data-setting="clockSeconds"]');
+      secToggle.checked = false;
+      fire(secToggle, "change");
+      await sleep(130);
+      const shortTime = text("#homeClock .clock-time");
+      assert(/^\d{1,2}:\d{2}(\s|\u202f)?(AM|PM)?$/i.test(shortTime), "Seconds are still visible: " + shortTime);
+      secToggle.checked = true;
+      fire(secToggle, "change");
+      await sleep(130);
+      assert(/\d{1,2}:\d{2}:\d{2}/.test(text("#homeClock .clock-time")), "Seconds did not return");
+      return "Seconds/date toggles update both clocks";
+    });
+
+    test("Glass, frosted and solid surfaces apply", async () => {
+      click('#settingsTabs [data-settings-tab="appearance"]');
+      await sleep(80);
+      click('[data-surface-choice="frosted"]');
+      await sleep(120);
+      const frosted = frameDoc.documentElement.dataset.surface;
+      const frostedBlur = frameWin.getComputedStyle(q(".home-hero")).backdropFilter;
+      click('[data-surface-choice="solid"]');
+      await sleep(120);
+      const solid = frameDoc.documentElement.dataset.surface;
+      const solidBlur = frameWin.getComputedStyle(q(".home-hero")).backdropFilter;
+      click('[data-surface-choice="glass"]');
+      await sleep(120);
+      const glass = frameDoc.documentElement.dataset.surface;
+      const glassBlur = frameWin.getComputedStyle(q(".home-hero")).backdropFilter;
+      assert(frosted === "frosted", "Frosted style did not apply");
+      assert(solid === "solid", "Solid style did not apply");
+      assert(glass === "glass", "Glass style did not apply");
+      assert(frostedBlur.includes("blur"), "Frosted has no backdrop blur");
+      assert(solidBlur === "none" || solidBlur === "", "Solid still has backdrop blur");
+      assert(glassBlur.includes("blur"), "Glass has no backdrop blur");
+      return "Frosted “" + frostedBlur + "” · Solid “" + solidBlur + "”";
+    });
+
+    test("Glass strength changes blur and tint", async () => {
+      const range = q('[data-setting="glassStrength"]');
+      range.value = "100";
+      fire(range, "input");
+      await sleep(100);
+      const rootStyle = frameWin.getComputedStyle(frameDoc.documentElement);
+      const blur = rootStyle.getPropertyValue("--glass-blur").trim();
+      const pct = rootStyle.getPropertyValue("--glass-pct").trim();
+      assert(blur === "34.0px", "Unexpected glass blur at full strength: " + blur);
+      assert(pct === "12.0%", "Unexpected glass tint at full strength: " + pct);
+      click('[data-surface-choice="frosted"]');
+      await sleep(120);
+      const frostedStyle = frameWin.getComputedStyle(frameDoc.documentElement);
+      const frostedBlur = frostedStyle.getPropertyValue("--glass-blur").trim();
+      const frostedPct = frostedStyle.getPropertyValue("--glass-pct").trim();
+      assert(frostedBlur === "60.0px", "Unexpected frosted blur at full strength: " + frostedBlur);
+      assert(frostedPct === "55.0%", "Unexpected frosted tint at full strength: " + frostedPct);
+      click('[data-surface-choice="glass"]');
+      range.value = "62";
+      fire(range, "input");
+      fire(range, "change");
+      await sleep(100);
+      return "Glass 34px / 12% · Frosted 60px / 55%";
+    });
+
+    test("Home layout modes and card visibility work", async () => {
+      click('#settingsTabs [data-settings-tab="home"]');
+      await sleep(80);
+      for (const mode of ["compact", "stack", "split"]) {
+        click('[data-home-layout="' + mode + '"]');
+        await sleep(100);
+        assert(q("#homeGrid").dataset.layout === mode, "Layout did not switch to " + mode);
+      }
+      const tasksToggle = q('[data-setting="showHomeTasks"]');
+      tasksToggle.checked = false;
+      fire(tasksToggle, "change");
+      await sleep(100);
+      assert(q("#homeTasksCard").hidden, "Tasks card did not hide");
+      tasksToggle.checked = true;
+      fire(tasksToggle, "change");
+      await sleep(100);
+      assert(!q("#homeTasksCard").hidden, "Tasks card did not return");
+      return "Split / stacked / compact and card toggles";
+    });
+
+    test("Widget anchor pad offers 3 × 9 positions", async () => {
+      click("#settingsDone");
+      await sleep(80);
+      click('#tabbar [data-tab="todo"]');
+      await sleep(100);
+      click("#railSettingsBtn");
+      await sleep(100);
+      click('#settingsTabs [data-settings-tab="layout"]');
+      await sleep(120);
+      const rows = qa("#widgetPosList .widget-pos-row");
+      assert(rows.length === 3, "Expected 3 widget rows, found " + rows.length);
+      rows.forEach((row) => {
+        assert(row.querySelectorAll(".anchor-cell").length === 9, "A widget row does not have 9 anchors");
+      });
+      const clockCell = rows[0].querySelector('.anchor-cell[data-ax="right"][data-ay="bottom"]');
+      clockCell.click();
+      await sleep(300);
+      const widget = q('.widget[data-widget="clock"]');
+      assert(widget.style.left && widget.style.top, "Clock position was not applied");
+      assert(rows[0].querySelector(".widget-pos-state").textContent.trim() === "Slot", "Position state did not update");
+      click("#widgetReset");
+      await sleep(220);
+      return "27 anchors · snap + reset present";
+    });
+
+    test("Dragging and snapping settings are exposed", async () => {
+      assert(q('[data-setting="widgetDrag"]'), "Drag toggle is missing");
+      assert(q('[data-setting="widgetSnap"]'), "Snap toggle is missing");
+      assert(q('.widget[data-widget="clock"] .widget-grip'), "Clock grip handle is missing");
+      return "Grip, drag toggle and 12×12 snap toggle";
+    });
+
+    test("Responsive layout keeps content inside the viewport", async () => {
+      click("#settingsDone");
+      await sleep(100);
+      const widths = [1440, 900, 620];
+      const report = [];
+      for (const width of widths) {
+        await frameWidth(width, width <= 620 ? 760 : 900);
+        const de = frameDoc.documentElement;
+        const body = frameDoc.body;
+        const overflow = Math.max(de.scrollWidth, body.scrollWidth) - de.clientWidth;
+        assert(overflow <= 2, "Horizontal overflow of " + overflow + "px at " + width + "px");
+        assert(q('.tab-panel.active[data-panel="todo"]'), "Active panel lost at " + width + "px");
+        report.push(width + "px");
+      }
+      await frameWidth(1280, 900);
+      assert(q('.tab-panel.active[data-panel="todo"]'), "Panel lost after resizing back");
+      return "No overflow at " + report.join(", ");
+    });
+
+    test("Home grid adapts between desktop and narrow", async () => {
+      click('#tabbar [data-tab="home"]');
+      await frameWidth(1440, 900);
+      const wide = frameWin.getComputedStyle(q("#homeGrid")).gridTemplateColumns.split(" ").length;
+      await frameWidth(900, 900);
+      const narrow = frameWin.getComputedStyle(q("#homeGrid")).gridTemplateColumns.split(" ").length;
+      await frameWidth(1280, 900);
+      assert(wide === 2, "Desktop Home should use 2 columns, got " + wide);
+      assert(narrow === 1, "Narrow Home should stack, got " + narrow);
+      return "2 columns → 1 column";
+    });
+
+    test("Markup has unique IDs and labelled controls", async () => {
+      const ids = qa("[id]").map((el) => el.id);
+      const seen = new Set();
+      const duplicates = [];
+      ids.forEach((id) => {
+        if (seen.has(id)) duplicates.push(id);
+        seen.add(id);
+      });
+      assert(duplicates.length === 0, "Duplicate IDs: " + duplicates.join(", "));
+      ["#railSettingsBtn", "#bookmarksBtn", "#appsBtn", "#homeSearchInput", "#homeTaskInput"].forEach((sel) => {
+        const el = q(sel);
+        assert(el, "Missing control " + sel);
+        const label = el.getAttribute("aria-label") || el.getAttribute("title") || el.getAttribute("placeholder");
+        assert(label && label.trim().length > 2, "Control has no accessible name: " + sel);
+      });
+      qa(".widget-grip").forEach((grip) => {
+        assert(grip.getAttribute("aria-label") || grip.title, "Widget grip has no label");
+      });
+      return ids.length + " IDs · no duplicates";
+    });
+
+    test("No script errors occurred during the run", async () => {
+      assert(runtimeErrors.length === 0, runtimeErrors.join(" · "));
+      return "0 runtime errors";
+    });
+
+    resetOutput();
+    const runStart = performance.now();
+    let passed = 0;
+    let failed = 0;
+
+    for (let i = 0; i < tests.length; i += 1) {
+      const item = tests[i];
+      stats.status.textContent = "Running " + (i + 1) + " / " + tests.length + "…";
+      const row = addRow(item.name);
+      const start = performance.now();
+      try {
+        const detail = await item.fn();
+        finishRow(row, true, detail, performance.now() - start);
+        passed += 1;
+      } catch (error) {
+        finishRow(row, false, error && error.message ? error.message : String(error), performance.now() - start);
+        failed += 1;
+      }
+      stats.total.textContent = String(passed + failed);
+      stats.pass.textContent = String(passed);
+      stats.fail.textContent = String(failed);
+      stats.bar.style.width = Math.round(((i + 1) / tests.length) * 100) + "%";
+    }
+
+    const duration = performance.now() - runStart;
+    stats.time.textContent = Math.round(duration) + " ms";
+    stats.status.textContent = failed === 0
+      ? "All " + passed + " checks passed"
+      : passed + " passed · " + failed + " failed";
+
+    return {
+      status: failed === 0 ? "pass" : "fail",
+      total: passed + failed,
+      passed,
+      failed,
+      durationMs: Math.round(duration),
+      tests: tests.map((item, index) => {
+        const row = listEl.children[index];
+        return {
+          name: item.name,
+          status: row.classList.contains("pass") ? "pass" : "fail",
+          detail: row.querySelector(".test-detail").textContent
+        };
+      })
+    };
+  }
+
+  /* ---------------- runner ---------------- */
+
+  async function run() {
+    const token = ++runToken;
+    const runButton = $("#runBtn");
+    runButton.disabled = true;
+    $("#openBtn").disabled = true;
+    window.__RESULTS__ = { status: "running" };
+    resetOutput();
+
+    const originalStorage = snapshotStorage();
+    clearStudyStorage();
+
+    try {
+      await createAppFrame();
+      if (token !== runToken) return;
+      const results = await runTests();
+      window.__RESULTS__ = results;
+      return results;
+    } catch (error) {
+      const message = error && error.message ? error.message : String(error);
+      stats.status.textContent = "Test run failed: " + message;
+      window.__RESULTS__ = { status: "error", error: message };
+      listEl.insertAdjacentHTML("beforeend",
+        '<li class="test fail"><span class="mark">✕</span><div><div class="test-name">Harness error</div><div class="test-detail"></div></div><span class="test-time"></span></li>');
+      listEl.querySelector("li:last-child .test-detail").textContent = message;
+      return window.__RESULTS__;
+    } finally {
+      if (frame) frame.remove();
+      frame = null;
+      frameWin = null;
+      frameDoc = null;
+      await sleep(400);
+      restoreStorage(originalStorage);
+      runButton.disabled = false;
+      $("#openBtn").disabled = false;
+    }
+  }
+
+  $("#runBtn").addEventListener("click", run);
+  $("#openBtn").addEventListener("click", () => window.open(location.href, "_blank", "noopener"));
+
+  window.__RUN_UI_TEST__ = run;
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => { run(); }, { once: true });
+  } else {
+    run();
+  }
+})();
+</script>
+</body>
+</html>

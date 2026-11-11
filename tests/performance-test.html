@@ -677,7 +677,7 @@
     });
 
     test("Rail navigation responds quickly", async () => {
-      const tabs = ["todo", "tracker", "calendar", "notes", "review", "home", "todo", "tracker", "calendar", "home"];
+      const tabs = ["todo", "tracker", "planner", "review", "home", "todo", "tracker", "planner", "home"];
       let times = [];
       /* Two passes: the second avoids JIT and first-render warm-up noise. */
       for (let pass = 0; pass < 2; pass += 1) {

@@ -26,8 +26,6 @@
     clockStyle: "digital",
     clockSeconds: true,
     clockShowDate: true,
-    widgetDrag: true,
-    widgetSnap: true,
     widgetPositions: {
       clock: { ax: "left", ay: "top" },
       search: { ax: "center", ay: "top" },
@@ -81,16 +79,16 @@
     orange: { name: "Orange", h: 26, s: 82, swatch: "#E8710A" },
     pink: { name: "Pink", h: 333, s: 58, swatch: "#C2185B" },
     red: { name: "Red", h: 356, s: 62, swatch: "#C5221F" },
-    yellow: { name: "Yellow", h: 44, s: 85, swatch: "#F9AB00" }
+    yellow: { name: "Yellow", h: 44, s: 85, swatch: "#F9AB00", primaryLight: 34 }
   };
 
   const ENGINES = {
-    google: { name: "Google", url: "https://www.google.com/search?q=" },
-    bing: { name: "Bing", url: "https://www.bing.com/search?q=" },
-    duckduckgo: { name: "DuckDuckGo", url: "https://duckduckgo.com/?q=" },
-    brave: { name: "Brave Search", url: "https://search.brave.com/search?q=" },
-    ecosia: { name: "Ecosia", url: "https://www.ecosia.org/search?q=" },
-    youtube: { name: "YouTube", url: "https://www.youtube.com/results?search_query=" }
+    google: { name: "Google", url: "https://www.google.com/search?q=", mark: "G", color: "#4285F4" },
+    bing: { name: "Bing", url: "https://www.bing.com/search?q=", mark: "b", color: "#00809D" },
+    duckduckgo: { name: "DuckDuckGo", url: "https://duckduckgo.com/?q=", mark: "D", color: "#DE5833" },
+    brave: { name: "Brave Search", url: "https://search.brave.com/search?q=", mark: "B", color: "#FB542B" },
+    ecosia: { name: "Ecosia", url: "https://www.ecosia.org/search?q=", mark: "E", color: "#1D6B4F" },
+    youtube: { name: "YouTube", url: "https://www.youtube.com/results?search_query=", mark: "▶", color: "#FF0000" }
   };
 
   const GOOGLE_APPS = [
@@ -173,13 +171,44 @@
     const m = (name || "").match(/[a-z0-9]/i);
     return m ? m[0].toUpperCase() : "★";
   }
-  function faviconFor(url, size) {
+  function faviconSources(url, size) {
+    const sources = [];
     try {
       const host = new URL(url).hostname;
-      return "https://www.google.com/s2/favicons?sz=" + (size || 64) + "&domain=" + encodeURIComponent(host);
-    } catch (e) {
-      return "";
-    }
+      const px = Math.max(16, Number(size) || 64);
+      try {
+        if (typeof chrome !== "undefined" && chrome.runtime && typeof chrome.runtime.getURL === "function") {
+          sources.push(chrome.runtime.getURL("/_favicon/?pageUrl=" + encodeURIComponent(url) + "&size=" + px));
+        }
+      } catch (e) { /* _favicon is Chrome-only */ }
+      sources.push("https://www.google.com/s2/favicons?sz=" + px + "&domain=" + encodeURIComponent(host));
+      sources.push("https://icons.duckduckgo.com/ip3/" + encodeURIComponent(host) + ".ico");
+    } catch (e) { /* ignore malformed URLs */ }
+    return sources;
+  }
+
+  /* Favicons load eagerly: a hidden/lazy image never starts its request. */
+  function attachFavicon(container, url, size, letter) {
+    const sources = faviconSources(url, size);
+    if (!container || !sources.length) return null;
+    const img = document.createElement("img");
+    img.alt = "";
+    img.className = "favicon-img";
+    img.referrerPolicy = "no-referrer";
+    img.decoding = "async";
+    let next = 0;
+    const step = () => {
+      if (next >= sources.length) { img.remove(); return; }
+      img.src = sources[next++];
+    };
+    img.addEventListener("load", () => {
+      img.classList.add("is-loaded");
+      if (letter) letter.style.display = "none";
+    });
+    img.addEventListener("error", step);
+    container.appendChild(img);
+    step();
+    return img;
   }
   function hostOf(url) {
     try { return new URL(url).hostname.replace(/^www\./, ""); } catch (e) { return url; }
@@ -214,7 +243,7 @@
   let mockData = {};
   let events = [];
   let pomoLog = [];
-  let pomo = { mode: "work", remaining: 25 * 60, running: false, sessionsToday: 0, focusMinsToday: 0, date: todayStr() };
+  let pomo = { mode: "work", remaining: 25 * 60, running: false, endAt: null, sessionsToday: 0, focusMinsToday: 0, date: todayStr() };
   let durations = { work: 25, short: 5, long: 15 };
   let pomoInterval = null;
   let activeCategory = "PRE";
@@ -292,7 +321,7 @@
       set("--md-tertiary-container", "hsl(" + ((h + 58) % 360) + " " + clamp(s - 18, 15, 50) + "% 30%)");
       set("--md-on-tertiary-container", "hsl(" + ((h + 58) % 360) + " " + clamp(s, 15, 60) + "% 92%)");
     } else {
-      set("--md-primary", "hsl(" + h + " " + clamp(s + 5, 20, 85) + "% 40%)");
+      set("--md-primary", "hsl(" + h + " " + clamp(s + 5, 20, 85) + "% " + (a.primaryLight || 40) + "%)");
       set("--md-on-primary", "#ffffff");
       set("--md-primary-container", "hsl(" + h + " " + clamp(s + 15, 25, 90) + "% 90%)");
       set("--md-on-primary-container", "hsl(" + h + " " + clamp(s + 10, 25, 85) + "% 18%)");
@@ -347,11 +376,12 @@
     const hideOnHome = activePanelName() === "home" && settings.hideWidgetsOnHome;
     setWidgetHidden("clock", !settings.showClock || hideOnHome);
     setWidgetHidden("search", !settings.showSearch || hideOnHome);
+    setWidgetHidden("actions", !(settings.showAppsBtn || settings.showBookmarksBtn));
     setWidgetHidden("dock", !settings.showDock);
 
     $("#pomoTrigger").hidden = !settings.showPomodoro;
-    $("#bookmarksBtn").hidden = !settings.showBookmarksBtn;
     $("#appsBtn").hidden = !settings.showAppsBtn;
+    $("#bookmarksBtn").hidden = !settings.showBookmarksBtn;
     $("#dockWrap").hidden = !settings.showDock;
   }
 
@@ -371,6 +401,35 @@
     rootEl.style.setProperty("--glass-sat", sat.toFixed(0) + "%");
   }
 
+  const GOOGLE_LOGO_SVG =
+    '<svg viewBox="0 0 48 48" aria-hidden="true">' +
+      '<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>' +
+      '<path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>' +
+      '<path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>' +
+      '<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>' +
+    '</svg>';
+
+  function engineLogoMarkup(key) {
+    if (key === "google") return GOOGLE_LOGO_SVG;
+    const engine = ENGINES[key] || ENGINES.google;
+    return '<span class="engine-mark" style="--engine-color:' + engine.color + '">' + engine.mark + "</span>";
+  }
+
+  function applySearchEngineBranding() {
+    const key = ENGINES[settings.engine] ? settings.engine : "google";
+    const engine = ENGINES[key];
+    const label = "Search " + engine.name + " or type a URL";
+    ["#searchInput", "#homeSearchInput"].forEach((sel) => {
+      const input = $(sel);
+      if (!input) return;
+      input.placeholder = label;
+      input.setAttribute("aria-label", label);
+    });
+    $$(".search-logo").forEach((logo) => {
+      logo.innerHTML = engineLogoMarkup(key);
+    });
+  }
+
   function applySettings() {
     applyTheme();
     rootEl.setAttribute("data-bg", settings.background);
@@ -380,6 +439,7 @@
     rootEl.style.setProperty("--dock-size", settings.dockSize + "px");
 
     applySurfaceStyle();
+    applySearchEngineBranding();
     applyWidgetVisibility();
     if ($("#dock")) $("#dock").classList.toggle("no-magnify", !settings.dockMagnify);
 
@@ -422,20 +482,52 @@
 
   /* ---------------- toast ---------------- */
 
-  function showToast(msg) {
+  function toastIcon(id) {
+    return '<svg class="toast-icon" aria-hidden="true"><use href="#' + id + '"></use></svg> ';
+  }
+
+  function showToast(msg, action) {
     const host = $("#toastHost");
     if (!host) return;
     const el = document.createElement("div");
     el.className = "toast";
-    el.innerHTML = "<div>" + msg + "</div><button type=\"button\" class=\"close\" aria-label=\"Dismiss\">&times;</button>";
-    el.querySelector(".close").addEventListener("click", () => el.remove());
+    const copy = document.createElement("div");
+    copy.className = "toast-copy";
+    copy.innerHTML = msg;
+    el.appendChild(copy);
+
+    if (action) {
+      const act = document.createElement("button");
+      act.type = "button";
+      act.className = "toast-action";
+      act.textContent = action.label || "Undo";
+      act.addEventListener("click", () => {
+        el.remove();
+        action.onClick();
+      });
+      el.appendChild(act);
+    }
+
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "close";
+    close.setAttribute("aria-label", "Dismiss");
+    close.innerHTML = '<svg class="icon"><use href="#i-close"></use></svg>';
+    close.addEventListener("click", () => el.remove());
+    el.appendChild(close);
+
     host.appendChild(el);
-    setTimeout(() => el.remove(), 9000);
+    setTimeout(() => el.remove(), action ? 10000 : 9000);
+  }
+
+  function undoToast(message, undo) {
+    showToast(message, { label: "Undo", onClick: undo });
   }
 
   /* ---------------- clock ---------------- */
 
-  function clockDateOptions() {
+  function clockDateOptions(compact) {
+    if (compact) return { weekday: "short", month: "short", day: "numeric" };
     return ["analog", "minimal", "chip"].includes(settings.clockStyle)
       ? { weekday: "short", month: "short", day: "numeric" }
       : { weekday: "long", year: "numeric", month: "long", day: "numeric" };
@@ -446,7 +538,7 @@
     for (let i = 0; i < 12; i++) {
       const angle = i * Math.PI / 6;
       const major = i % 3 === 0;
-      const r1 = major ? 41 : 45;
+      const r1 = major ? 37 : 44;
       const x1 = 60 + Math.sin(angle) * r1;
       const y1 = 60 - Math.cos(angle) * r1;
       const x2 = 60 + Math.sin(angle) * 50;
@@ -459,9 +551,9 @@
           '<circle class="a-face" cx="60" cy="60" r="56"/>' +
           ticks +
           '<line class="a-hand a-hour" x1="60" y1="60" x2="60" y2="36"/>' +
-          '<line class="a-hand a-minute" x1="60" y1="60" x2="60" y2="24"/>' +
-          '<line class="a-hand a-second" x1="60" y1="60" x2="60" y2="20"/>' +
-          '<circle class="a-pin" cx="60" cy="60" r="3.6"/>' +
+          '<line class="a-hand a-minute" x1="60" y1="60" x2="60" y2="19"/>' +
+          '<line class="a-hand a-second" x1="60" y1="60" x2="60" y2="14"/>' +
+          '<circle class="a-pin" cx="60" cy="60" r="2.8"/>' +
         '</svg>' +
       '</div>' +
       (settings.clockShowDate ? '<div class="clock-date">—</div>' : "") +
@@ -507,7 +599,7 @@
     block.dataset.style = settings.clockStyle;
     block.classList.toggle("no-seconds", !settings.clockSeconds);
     block.innerHTML = clockMarkup();
-    updateClockElement(block);
+    updateClockElement(block, block.id === "clockBlock");
   }
 
   function renderClocks() {
@@ -515,20 +607,24 @@
     renderClockInto($("#homeClock"));
   }
 
-  function updateClockElement(block) {
+  function updateClockElement(block, compact) {
     if (!block) return;
     const d = new Date();
     const withSeconds = !!settings.clockSeconds;
     const timeText = d.toLocaleTimeString("en-US", withSeconds
-      ? { hour: "2-digit", minute: "2-digit", second: "2-digit" }
-      : { hour: "2-digit", minute: "2-digit" });
+      ? { hour: "numeric", minute: "2-digit", second: "2-digit" }
+      : { hour: "numeric", minute: "2-digit" });
+    const floating = block.id === "clockBlock";
+    const widthBefore = floating ? block.offsetWidth : 0;
 
     const timeEl = block.querySelector(".clock-time");
     if (timeEl) timeEl.textContent = timeText;
     const dateEl = block.querySelector(".clock-date");
-    if (dateEl) dateEl.textContent = d.toLocaleDateString("en-US", clockDateOptions());
+    if (dateEl) dateEl.textContent = d.toLocaleDateString("en-US", clockDateOptions(compact));
     const secEl = block.querySelector(".clock-sec");
     if (secEl) secEl.textContent = String(d.getSeconds()).padStart(2, "0");
+    /* Hour rollover changes the text width; keep the search clear of it. */
+    if (floating && block.offsetWidth !== widthBefore) scheduleWidgetLayout();
 
     const hourHand = block.querySelector(".a-hour");
     if (hourHand) {
@@ -544,8 +640,10 @@
   }
 
   function updateDateTime() {
-    updateClockElement($("#clockBlock"));
-    updateClockElement($("#homeClock"));
+    /* The floating clock shares its gutter with the content column, so it
+       uses a compact date; the roomy Home clock keeps the full date. */
+    updateClockElement($("#clockBlock"), true);
+    updateClockElement($("#homeClock"), false);
   }
 
   function buildClockChoices() {
@@ -572,6 +670,16 @@
     return $('.widget[data-widget="' + key + '"]');
   }
 
+  let widgetLayoutFrame = 0;
+
+  function scheduleWidgetLayout() {
+    if (widgetLayoutFrame) return;
+    widgetLayoutFrame = requestAnimationFrame(() => {
+      widgetLayoutFrame = 0;
+      applyWidgetLayout();
+    });
+  }
+
   function applyWidgetLayout() {
     const layer = $("#widgetLayer");
     if (!layer) return;
@@ -583,39 +691,94 @@
     const bottomGap = parseFloat(layerStyle.getPropertyValue("--widget-bottom")) || 24;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
+    const gap = 14;
+    const placed = [];
+    const intersects = (a, b) =>
+      a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
     WIDGETS.forEach(({ key }) => {
       const el = widgetEl(key);
       if (!el || el.hidden) return;
+      const p = settings.widgetPositions[key] || {};
+      const free = !!(p && p.free);
+      const ax = free ? "center" : p.ax || "center";
+      const ay = free ? "mid" : p.ay || "mid";
+      const searchForm = key === "search" ? el.querySelector(".search") : null;
+
+      /* Keep the centred search clear of the clock by shrinking it to the
+         free space. Below 760 px it spans the row and drops underneath. */
+      if (searchForm) {
+        if (free) {
+          el.style.removeProperty("--search-max");
+        } else {
+          const clockBox = placed.find((b) => b.key === "clock");
+          let width = vw > 760 ? Math.min(560, vw - 32) : vw - 32;
+          if (vw > 760) {
+            const limit = clockBox ? vw - 2 * (clockBox.x + clockBox.w + gap) : 560;
+            width = Math.min(width, limit);
+          }
+          el.style.setProperty("--search-max", Math.max(260, Math.round(width)) + "px");
+        }
+      }
+
       const w = el.offsetWidth;
       const h = el.offsetHeight;
-      const p = settings.widgetPositions[key];
       let cx;
       let cy;
 
-      if (p && p.free) {
+      if (free) {
         cx = p.x * vw;
         cy = p.y * vh;
       } else {
-        const ax = p ? p.ax : "center";
-        const ay = p ? p.ay : "mid";
         cx = ax === "left" ? leftGap + w / 2 : ax === "right" ? vw - rightGap - w / 2 : vw / 2;
         cy = ay === "top" ? topGap + h / 2 : ay === "bottom" ? vh - bottomGap - h / 2 : vh / 2;
       }
 
-      /* On narrow screens keep the search on its own row, below the
-         clock/actions, instead of letting the three overlap. */
-      if (key === "search" && p && !p.free && p.ay === "top" && vw < 760) {
-        const clock = widgetEl("clock");
-        const clockH = clock && !clock.hidden ? clock.offsetHeight : 0;
-        cy = Math.max(cy, topGap + clockH + 12 + h / 2);
+      if (!free) {
+        /* Stack anchored widgets whenever they would collide: search moves
+           below the clock on narrow screens, the dock nudges upward on short
+           viewports. */
+        let guard = 0;
+        while (guard < 8) {
+          const box = { x: cx - w / 2, y: cy - h / 2, w, h };
+          const hit = placed.find((b) => intersects(box, b));
+          if (!hit) break;
+          cy = ay === "bottom" ? hit.y - gap - h / 2 : hit.y + hit.h + gap + h / 2;
+          guard += 1;
+        }
       }
 
       cx = clamp(cx, w / 2 + 8, vw - w / 2 - 8);
       cy = clamp(cy, h / 2 + 8, vh - h / 2 - 8);
       el.style.left = cx + "px";
       el.style.top = cy + "px";
+      placed.push({ key, x: cx - w / 2, y: cy - h / 2, w, h, anchor: ay });
     });
+
+    /* Push the active panel below any top widget that crosses its top edge.
+       `.single` panels sit centred and clear the gutter on wide screens, but
+       Planner and narrow layouts run full width, where an analog or stacked
+       clock would otherwise sit on the panel corner. Re-measure from the
+       stylesheet default each time so the inset never accumulates. */
+    const body = $(".workspace-body");
+    const panel = $(".tab-panel.active .panel");
+    if (body && panel) {
+      rootEl.style.removeProperty("--workspace-top");
+      const base = parseFloat(getComputedStyle(body).paddingTop) || 64;
+      const bodyTop = body.getBoundingClientRect().top;
+      const panelBox = panel.getBoundingClientRect();
+      const panelTop = bodyTop + base;
+      let inset = base;
+      placed.forEach((b) => {
+        const crossesX = b.x < panelBox.right && b.x + b.w > panelBox.left;
+        const crossesTop = b.y < panelTop && b.y + b.h > panelTop;
+        if (crossesX && crossesTop) inset = Math.max(inset, b.y + b.h - bodyTop + 16);
+      });
+      if (inset > base) rootEl.style.setProperty("--workspace-top", Math.round(inset) + "px");
+    }
+
+    /* Keep the launcher popup glued to its icon after layout/resize changes. */
+    if ($("#appsDialog") && $("#appsDialog").open) positionAppsPopup();
   }
 
   function renderWidgetPositions() {
@@ -667,95 +830,6 @@
 
       row.append(label, grid, state);
       host.appendChild(row);
-    });
-  }
-
-  let widgetDragState = null;
-
-  function setupWidgetDragging() {
-    const layer = $("#widgetLayer");
-    if (!layer) return;
-
-    layer.addEventListener("pointerdown", (e) => {
-      const grip = e.target.closest(".widget-grip");
-      if (!grip || !settings.widgetDrag) return;
-      const widget = grip.closest(".widget");
-      if (!widget) return;
-      const rect = widget.getBoundingClientRect();
-      widgetDragState = {
-        widget,
-        key: widget.dataset.widget,
-        pointerId: e.pointerId,
-        startX: e.clientX,
-        startY: e.clientY,
-        centerX: rect.left + rect.width / 2,
-        centerY: rect.top + rect.height / 2
-      };
-      widget.classList.add("dragging");
-      try { grip.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
-      e.preventDefault();
-    });
-
-    layer.addEventListener("pointermove", (e) => {
-      if (!widgetDragState || e.pointerId !== widgetDragState.pointerId) return;
-      const el = widgetDragState.widget;
-      const w = el.offsetWidth;
-      const h = el.offsetHeight;
-      const dx = e.clientX - widgetDragState.startX;
-      const dy = e.clientY - widgetDragState.startY;
-      const cx = clamp(widgetDragState.centerX + dx, w / 2 + 8, window.innerWidth - w / 2 - 8);
-      const cy = clamp(widgetDragState.centerY + dy, h / 2 + 8, window.innerHeight - h / 2 - 8);
-      el.style.left = cx + "px";
-      el.style.top = cy + "px";
-      e.preventDefault();
-    });
-
-    const endDrag = (e) => {
-      if (!widgetDragState) return;
-      if (e && e.pointerId !== undefined && e.pointerId !== widgetDragState.pointerId) return;
-      const state = widgetDragState;
-      widgetDragState = null;
-      state.widget.classList.remove("dragging");
-      const rect = state.widget.getBoundingClientRect();
-      let x = (rect.left + rect.width / 2) / window.innerWidth;
-      let y = (rect.top + rect.height / 2) / window.innerHeight;
-      if (settings.widgetSnap) {
-        x = Math.round(x * 12) / 12;
-        y = Math.round(y * 12) / 12;
-      }
-      settings.widgetPositions[state.key] = { free: true, x: clamp(x, 0, 1), y: clamp(y, 0, 1) };
-      applyWidgetLayout();
-      renderWidgetPositions();
-      saveSettings();
-    };
-
-    layer.addEventListener("pointerup", endDrag);
-    layer.addEventListener("pointercancel", endDrag);
-
-    /* Arrow keys nudge a focused grip for keyboard-only placement. */
-    layer.addEventListener("keydown", (e) => {
-      if (!settings.widgetDrag) return;
-      const grip = e.target.closest(".widget-grip");
-      if (!grip) return;
-      const step = e.shiftKey ? 0.05 : 0.01;
-      let dx = 0;
-      let dy = 0;
-      if (e.key === "ArrowLeft") dx = -step;
-      else if (e.key === "ArrowRight") dx = step;
-      else if (e.key === "ArrowUp") dy = -step;
-      else if (e.key === "ArrowDown") dy = step;
-      if (!dx && !dy) return;
-      e.preventDefault();
-      const key = grip.dataset.widgetGrip;
-      const el = widgetEl(key);
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const x = (rect.left + rect.width / 2) / window.innerWidth + dx;
-      const y = (rect.top + rect.height / 2) / window.innerHeight + dy;
-      settings.widgetPositions[key] = { free: true, x: clamp(x, 0, 1), y: clamp(y, 0, 1) };
-      applyWidgetLayout();
-      renderWidgetPositions();
-      saveSettings();
     });
   }
 
@@ -831,7 +905,11 @@
       const avatar = document.createElement("span");
       avatar.className = "app-avatar";
       avatar.style.background = app.color;
-      avatar.textContent = app.letter;
+      avatar.style.color = ["#FBBC04", "#F4B400"].includes(app.color) ? "#332A00" : "#fff";
+      const letter = document.createElement("span");
+      letter.textContent = app.letter;
+      avatar.appendChild(letter);
+      attachFavicon(avatar, app.url, 64, letter);
       const label = document.createElement("span");
       label.textContent = app.name;
       a.append(avatar, label);
@@ -839,10 +917,38 @@
     });
   }
 
+  /* Anchor the launcher popup to the waffle icon: right edges aligned, a small
+     gap below, flipping above the icon when the viewport is short, and pinned
+     to the page padding on phones. */
+  function positionAppsPopup() {
+    const dialog = $("#appsDialog");
+    const anchor = $("#appsBtn");
+    if (!dialog || !dialog.open || !anchor) return;
+    const pad = 12;
+    const gap = 10;
+    const a = anchor.getBoundingClientRect();
+    const d = dialog.getBoundingClientRect();
+    let left = window.innerWidth <= 620 ? pad : a.right - d.width;
+    left = Math.max(pad, Math.min(left, window.innerWidth - d.width - pad));
+    let top = a.bottom + gap;
+    if (top + d.height > window.innerHeight - pad) {
+      top = a.top - d.height - gap;
+    }
+    top = Math.max(pad, Math.min(top, window.innerHeight - d.height - pad));
+    dialog.style.left = Math.round(left) + "px";
+    dialog.style.top = Math.round(top) + "px";
+  }
+
   function openApps() {
     const dialog = $("#appsDialog");
     if (!dialog) return;
-    if (!dialog.open) dialog.showModal();
+    if (!dialog.open) {
+      /* Measure while hidden so the first frame is already in place. */
+      dialog.style.visibility = "hidden";
+      dialog.showModal();
+      positionAppsPopup();
+      dialog.style.visibility = "";
+    }
     document.body.classList.add("locked");
   }
   function closeApps() {
@@ -873,19 +979,7 @@
       letter.className = "dock-letter";
       letter.textContent = firstLetter(item.title);
       icon.appendChild(letter);
-
-      const img = document.createElement("img");
-      img.alt = "";
-      img.loading = "lazy";
-      img.referrerPolicy = "no-referrer";
-      img.src = faviconFor(item.url, 128);
-      img.style.display = "none";
-      img.addEventListener("load", () => {
-        letter.style.display = "none";
-        img.style.display = "";
-      });
-      img.addEventListener("error", () => { img.remove(); });
-      icon.appendChild(img);
+      attachFavicon(icon, item.url, 128, letter);
 
       const tip = document.createElement("span");
       tip.className = "dock-tooltip";
@@ -895,26 +989,11 @@
       dock.appendChild(a);
     });
 
-    if (dockItems.length) {
-      const sep = document.createElement("span");
-      sep.className = "dock-sep";
-      dock.appendChild(sep);
-    }
-
-    const edit = document.createElement("button");
-    edit.type = "button";
-    edit.className = "dock-edit";
-    edit.title = "Edit favourites";
-    edit.innerHTML =
-      '<span class="dock-icon"><svg class="icon" style="width:24px;height:24px"><use href="#i-settings"></use></svg></span>' +
-      '<span class="dock-tooltip">Edit dock</span>';
-    edit.addEventListener("click", () => openSettings("dock"));
-    dock.appendChild(edit);
     applyWidgetLayout();
   }
 
   function resetDockMagnification() {
-    $$("#dock .dock-item, #dock .dock-edit").forEach((el) => {
+    $$("#dock .dock-item").forEach((el) => {
       el.style.setProperty("--s", "1");
       el.style.setProperty("--lift", "0px");
       el.style.setProperty("--inv", "1");
@@ -925,7 +1004,7 @@
     const dock = $("#dock");
     dock.addEventListener("mousemove", (e) => {
       if (!settings.dockMagnify || !settings.animations) return;
-      const items = $$(".dock-item, .dock-edit", dock);
+      const items = $$(".dock-item", dock);
       const base = settings.dockSize;
       const range = base * 2.6;
       items.forEach((el) => {
@@ -966,7 +1045,7 @@
   function addDockItem(title, url) {
     const clean = normalizeUrl(url);
     if (!clean) {
-      showToast("⚠️ That doesn’t look like a valid web address.");
+      showToast(toastIcon("i-alert") + "That doesn’t look like a valid web address.");
       return false;
     }
     if (dockItems.some((d) => d.url === clean)) {
@@ -1017,14 +1096,7 @@
       const letter = document.createElement("span");
       letter.textContent = firstLetter(item.title);
       icon.appendChild(letter);
-      const img = document.createElement("img");
-      img.alt = "";
-      img.referrerPolicy = "no-referrer";
-      img.src = faviconFor(item.url, 64);
-      img.style.display = "none";
-      img.addEventListener("load", () => { letter.style.display = "none"; img.style.display = ""; });
-      img.addEventListener("error", () => img.remove());
-      icon.appendChild(img);
+      attachFavicon(icon, item.url, 64, letter);
 
       const copy = document.createElement("span");
       copy.className = "dock-setting-copy";
@@ -1194,14 +1266,7 @@
       const letter = document.createElement("span");
       letter.textContent = firstLetter(bm.title || hostOf(bm.url));
       fav.appendChild(letter);
-      const img = document.createElement("img");
-      img.alt = "";
-      img.referrerPolicy = "no-referrer";
-      img.src = faviconFor(bm.url, 64);
-      img.style.display = "none";
-      img.addEventListener("load", () => { letter.style.display = "none"; img.style.display = ""; });
-      img.addEventListener("error", () => img.remove());
-      fav.appendChild(img);
+      attachFavicon(fav, bm.url, 64, letter);
 
       const main = document.createElement("button");
       main.type = "button";
@@ -1228,7 +1293,7 @@
           removeDockItem(existing.id);
           showToast("Removed from dock.");
         } else if (addDockItem(bm.title || hostOf(bm.url), bm.url)) {
-          showToast("⭐ Pinned to your dock.");
+          showToast(toastIcon("i-star") + "Pinned to your dock.");
         }
         renderBookmarks();
       });
@@ -1246,6 +1311,7 @@
     requestAnimationFrame(() => scrim.classList.add("show"));
     panel.classList.add("open");
     panel.setAttribute("aria-hidden", "false");
+    panel.removeAttribute("inert");
     document.body.classList.add("locked");
     loadBrowserBookmarks(true);
     setTimeout(() => $("#bookmarksSearch").focus({ preventScroll: true }), 280);
@@ -1256,6 +1322,7 @@
     const scrim = $("#scrim");
     panel.classList.remove("open");
     panel.setAttribute("aria-hidden", "true");
+    panel.setAttribute("inert", "");
     scrim.classList.remove("show");
     document.body.classList.remove("locked");
     clearTimeout(scrimTimer);
@@ -1269,6 +1336,7 @@
       const active = b.dataset.settingsTab === name;
       b.classList.toggle("active", active);
       b.setAttribute("aria-selected", active ? "true" : "false");
+      b.tabIndex = active ? 0 : -1;
     });
     $$(".settings-section").forEach((s) => {
       s.hidden = s.dataset.settingsPanel !== name;
@@ -1377,6 +1445,13 @@
     checkReminders();
   }
 
+  function isTaskOverdue(t) {
+    if (!t || !t.time || t.done || t.date !== todayStr()) return false;
+    const hm = t.time.split(":").map(Number);
+    const now = new Date();
+    return hm[0] * 60 + hm[1] < now.getHours() * 60 + now.getMinutes();
+  }
+
   function renderTodos() {
     renderHomeTasks();
     updateHomeGreeting();
@@ -1424,11 +1499,7 @@
       items.forEach((t) => {
         const li = document.createElement("li");
         li.className = "todo-item" + (t.done ? " done" : "");
-        let overdue = false;
-        if (t.time && !t.done && date === todayStr()) {
-          const hm = t.time.split(":").map(Number);
-          if (hm[0] * 60 + hm[1] < nowMins) overdue = true;
-        }
+        const overdue = isTaskOverdue(t);
         if (overdue) li.classList.add("overdue");
 
         const check = document.createElement("button");
@@ -1448,6 +1519,12 @@
           time.textContent = t.time;
           li.appendChild(time);
         }
+        if (overdue) {
+          const tag = document.createElement("span");
+          tag.className = "overdue-tag";
+          tag.textContent = "Overdue";
+          li.appendChild(tag);
+        }
         const del = document.createElement("button");
         del.type = "button";
         del.className = "del-btn";
@@ -1461,9 +1538,16 @@
           renderTodos();
         });
         del.addEventListener("click", () => {
-          todos = todos.filter((x) => x.id !== t.id);
+          const index = todos.findIndex((x) => x.id === t.id);
+          if (index < 0) return;
+          const [removed] = todos.splice(index, 1);
           persist("todos-list", todos);
           renderTodos();
+          undoToast("Task deleted.", () => {
+            todos.splice(Math.min(index, todos.length), 0, removed);
+            persist("todos-list", todos);
+            renderTodos();
+          });
         });
         ul.appendChild(li);
       });
@@ -1499,7 +1583,7 @@
         if (hm[0] * 60 + hm[1] <= nowMins) {
           t.notified = true;
           changed = true;
-          showToast("⏰ Reminder: <b>" + escapeHtml(t.text) + "</b> (" + t.time + ")");
+          showToast(toastIcon("i-clock") + "Reminder: <b>" + escapeHtml(t.text) + "</b> (" + t.time + ")");
         }
       }
     });
@@ -1528,7 +1612,13 @@
   function updateHomeGreeting() {
     const daypart = homeDaypartLabel();
     const daypartEl = $("#homeDaypart");
-    if (daypartEl) daypartEl.textContent = daypart;
+    if (daypartEl) {
+      /* The eyebrow carries the date; the heading carries the greeting, so the
+         two never repeat "Good afternoon" when no name is configured. */
+      daypartEl.textContent = new Date().toLocaleDateString("en-US", {
+        weekday: "long", month: "long", day: "numeric"
+      });
+    }
 
     const name = (settings.homeName || "").trim();
     const greetingEl = $("#homeGreeting");
@@ -1594,6 +1684,13 @@
         time.textContent = t.time;
         li.appendChild(time);
       }
+      if (isTaskOverdue(t)) {
+        li.classList.add("overdue");
+        const tag = document.createElement("span");
+        tag.className = "overdue-tag";
+        tag.textContent = "Overdue";
+        li.appendChild(tag);
+      }
       li.appendChild(del);
 
       check.addEventListener("click", () => {
@@ -1602,9 +1699,16 @@
         renderTodos();
       });
       del.addEventListener("click", () => {
-        todos = todos.filter((x) => x.id !== t.id);
+        const index = todos.findIndex((x) => x.id === t.id);
+        if (index < 0) return;
+        const [removed] = todos.splice(index, 1);
         persist("todos-list", todos);
         renderTodos();
+        undoToast("Task deleted.", () => {
+          todos.splice(Math.min(index, todos.length), 0, removed);
+          persist("todos-list", todos);
+          renderTodos();
+        });
       });
 
       host.appendChild(li);
@@ -1626,15 +1730,11 @@
 
       const mark = document.createElement("span");
       mark.className = "home-link-mark";
-      mark.textContent = firstLetter(item.title);
-
-      const img = document.createElement("img");
-      img.alt = "";
-      img.loading = "lazy";
-      img.referrerPolicy = "no-referrer";
-      img.src = faviconFor(item.url, 64);
-      img.addEventListener("load", () => { mark.textContent = ""; mark.appendChild(img); });
-      img.addEventListener("error", () => img.remove());
+      const letter = document.createElement("span");
+      letter.className = "home-link-letter";
+      letter.textContent = firstLetter(item.title);
+      mark.appendChild(letter);
+      attachFavicon(mark, item.url, 64, letter);
 
       const label = document.createElement("span");
       label.className = "home-link-label";
@@ -1643,13 +1743,6 @@
       a.append(mark, label);
       host.appendChild(a);
     });
-
-    const edit = document.createElement("button");
-    edit.type = "button";
-    edit.className = "home-link home-link-edit";
-    edit.innerHTML = '<span class="home-link-mark"><svg class="icon"><use href="#i-settings"></use></svg></span><span class="home-link-label">Customize</span>';
-    edit.addEventListener("click", () => openSettings("home"));
-    host.appendChild(edit);
   }
 
   function updateHomePomo() {
@@ -1736,9 +1829,16 @@
       del.title = "Delete note";
       del.innerHTML = "&times;";
       del.addEventListener("click", () => {
-        notes = notes.filter((x) => x.id !== n.id);
+        const index = notes.findIndex((x) => x.id === n.id);
+        if (index < 0) return;
+        const [removed] = notes.splice(index, 1);
         persist("notes-list", notes);
         renderNotes();
+        undoToast("Note deleted.", () => {
+          notes.splice(Math.min(index, notes.length), 0, removed);
+          persist("notes-list", notes);
+          renderNotes();
+        });
       });
       card.append(body, time, del);
       el.appendChild(card);
@@ -1773,6 +1873,10 @@
         pomo.focusMinsToday = saved.focusMinsToday || 0;
       }
       if (saved.durations) durations = Object.assign({ work: 25, short: 5, long: 15 }, saved.durations);
+      if (["work", "short", "long"].includes(saved.mode)) pomo.mode = saved.mode;
+      if (typeof saved.remaining === "number" && isFinite(saved.remaining)) {
+        pomo.remaining = Math.max(0, saved.remaining);
+      }
     }
     pomoLog = await store.load("pomodoro-log", []);
     if (!Array.isArray(pomoLog)) pomoLog = [];
@@ -1781,7 +1885,26 @@
     $("#workLen").value = durations.work;
     $("#shortLen").value = durations.short;
     $("#longLen").value = durations.long;
-    pomo.remaining = durations.work * 60;
+
+    /* A running timer is stored as an end timestamp, so background tab
+       throttling (or closing and reopening the tab) never resets the count. */
+    if (saved && saved.running && saved.endAt) {
+      pomo.mode = ["work", "short", "long"].includes(saved.mode) ? saved.mode : "work";
+      const left = Math.ceil((saved.endAt - Date.now()) / 1000);
+      if (left > 0) {
+        pomo.running = true;
+        pomo.endAt = saved.endAt;
+        pomo.remaining = left;
+        pomoInterval = setInterval(tick, 1000);
+      } else if (saved.lastCompletedEndAt !== saved.endAt) {
+        /* The session finished while no tab was open: credit it once, then
+           land on the matching break/focus mode without auto-starting. */
+        completeSession(true);
+        return;
+      }
+    }
+
+    pomo.remaining = Math.max(0, Math.min(pomo.remaining, modeLen(pomo.mode)));
     updatePomoUI();
     updateStatsUI();
   }
@@ -1791,7 +1914,12 @@
       date: todayStr(),
       sessionsToday: pomo.sessionsToday,
       focusMinsToday: pomo.focusMinsToday,
-      durations: durations
+      durations: durations,
+      mode: pomo.mode,
+      remaining: pomo.remaining,
+      running: pomo.running,
+      endAt: pomo.endAt,
+      lastCompletedEndAt: pomo.lastCompletedEndAt || null
     });
   }
   function modeLen(mode) { return durations[mode] * 60; }
@@ -1840,24 +1968,43 @@
     } catch (e) { /* audio may be blocked */ }
   }
 
+  function completeSession(restored) {
+    const finishedAt = pomo.endAt;
+    const finishedMode = pomo.mode;
+    pomo.running = false;
+    pomo.endAt = null;
+    clearInterval(pomoInterval);
+    pomoInterval = null;
+
+    if (finishedMode === "work") {
+      pomo.sessionsToday++;
+      pomo.focusMinsToday += durations.work;
+      pomoLog.push({ date: todayStr(), minutes: durations.work });
+      if (pomoLog.length > 200) pomoLog = pomoLog.slice(-200);
+      store.save("pomodoro-log", pomoLog);
+      if (!restored) beep();
+      showToast(toastIcon("i-check") + "Focus session complete. Time for a break.");
+      pomo.mode = pomo.sessionsToday % 4 === 0 ? "long" : "short";
+    } else {
+      if (!restored) beep();
+      showToast(toastIcon("i-bell") + "Break over — back to focus.");
+      pomo.mode = "work";
+    }
+
+    pomo.remaining = modeLen(pomo.mode);
+    pomo.lastCompletedEndAt = finishedAt || null;
+    savePomoData();
+    updateStatsUI();
+    updatePomoUI();
+  }
+
   function tick() {
-    pomo.remaining--;
-    if (pomo.remaining < 0) {
-      beep();
-      if (pomo.mode === "work") {
-        pomo.sessionsToday++;
-        pomo.focusMinsToday += durations.work;
-        pomoLog.push({ date: todayStr(), minutes: durations.work });
-        if (pomoLog.length > 200) pomoLog = pomoLog.slice(-200);
-        store.save("pomodoro-log", pomoLog);
-        showToast("✅ Focus session complete. Time for a break.");
-        switchMode(pomo.sessionsToday % 4 === 0 ? "long" : "short", true);
-      } else {
-        showToast("🔔 Break over — back to focus.");
-        switchMode("work", true);
-      }
-      savePomoData();
-      updateStatsUI();
+    if (!pomo.running || !pomo.endAt) return;
+    /* Derive from the clock rather than subtracting one per interval: browsers
+       throttle background timers, so a --1 tick would drift or stall. */
+    pomo.remaining = Math.max(0, Math.ceil((pomo.endAt - Date.now()) / 1000));
+    if (pomo.remaining <= 0) {
+      completeSession(false);
       return;
     }
     updatePomoUI();
@@ -1869,17 +2016,26 @@
     pomo.mode = mode;
     pomo.remaining = modeLen(mode);
     pomo.running = false;
+    pomo.endAt = null;
     updatePomoUI();
     if (autoStart) toggleTimer();
+    else savePomoData();
   }
 
   function toggleTimer() {
     pomo.running = !pomo.running;
-    if (pomo.running) pomoInterval = setInterval(tick, 1000);
-    else {
+    if (pomo.running) {
+      pomo.endAt = Date.now() + pomo.remaining * 1000;
+      pomoInterval = setInterval(tick, 1000);
+    } else {
       clearInterval(pomoInterval);
       pomoInterval = null;
+      if (pomo.endAt) {
+        pomo.remaining = Math.max(0, Math.ceil((pomo.endAt - Date.now()) / 1000));
+        pomo.endAt = null;
+      }
     }
+    savePomoData();
     updatePomoUI();
   }
 
@@ -1921,7 +2077,7 @@
     });
     $("#sheetHead").innerHTML =
       "<tr>" +
-      "<th>S.No</th><th>Date</th><th>Exam</th><th>Mock Name</th><th>Rank</th><th>Total Cand.</th>" +
+      '<th class="col-sno">S.No</th><th>Date</th><th>Exam</th><th class="col-mock">Mock Name</th><th>Rank</th><th>Total Cand.</th>' +
       '<th>Marks</th><th class="hdr-pct">Percentile</th><th class="hdr-pct">Accuracy</th><th>Attempt</th>' +
       '<th class="hdr-right">Right</th><th class="hdr-wrong">Wrong</th>' +
       sectionHeaders + "<th></th></tr>";
@@ -1929,6 +2085,10 @@
 
   function blankRow() {
     return { id: uid(), date: todayStr(), exam: "", mockName: "", rank: "", totalCandidates: "", percentile: "" };
+  }
+
+  function ovrButton(field) {
+    return '<button type="button" class="ovr-reset" data-ovr="' + field + '" title="Edited — reset to the calculated value" aria-label="Reset to the calculated value">↺</button>';
   }
 
   function computeRow(r, sections) {
@@ -1973,10 +2133,24 @@
   function updateComputedCells(tr, r, sections) {
     const eff = effectiveRow(r, sections);
     const active = document.activeElement;
+    const isOverride = (field) => r[field] !== "" && r[field] != null;
+    const markOverride = (input, field) => {
+      if (!input) return;
+      const on = isOverride(field);
+      const cell = input.closest(".ovr-cell");
+      if (cell) cell.classList.toggle("is-override", on);
+      input.title = on ? "Manual override — click ↺ to restore the calculated value" : "";
+    };
 
+    const marksBtn = tr.querySelector(".marks-toggle");
+    if (marksBtn) {
+      marksBtn.textContent = fmt(eff.marks);
+      const colour = r.marksColor === "pos" ? "green" : r.marksColor === "neg" ? "red" : "default";
+      marksBtn.title = "Marks colour: " + colour + " — click to cycle";
+      marksBtn.setAttribute("aria-label", "Marks " + fmt(eff.marks) + ", colour " + colour + ". Click to cycle the colour.");
+    }
     const marksTd = tr.querySelector(".total-marks");
     if (marksTd) {
-      marksTd.textContent = fmt(eff.marks);
       marksTd.classList.toggle("pos", r.marksColor === "pos");
       marksTd.classList.toggle("neg", r.marksColor === "neg");
     }
@@ -2000,6 +2174,7 @@
         if (autoTag) autoTag.style.display = "none";
       }
     }
+    markOverride(pctInput, "percentile");
 
     const accInput = tr.querySelector('[data-f="accuracyOvr"]');
     if (accInput && accInput !== active) {
@@ -2008,6 +2183,7 @@
       accInput.style.background = accColor.bg;
       accInput.style.color = accColor.fg;
     }
+    markOverride(accInput, "accuracyOvr");
 
     const attInput = tr.querySelector('[data-f="attemptOvr"]');
     if (attInput && attInput !== active) attInput.value = eff.attempt;
@@ -2015,6 +2191,9 @@
     if (rightInput && rightInput !== active) rightInput.value = eff.right;
     const wrongInput = tr.querySelector('[data-f="wrongOvr"]');
     if (wrongInput && wrongInput !== active) wrongInput.value = eff.wrong;
+    markOverride(attInput, "attemptOvr");
+    markOverride(rightInput, "rightOvr");
+    markOverride(wrongInput, "wrongOvr");
 
     sections.forEach((key) => {
       const netInput = tr.querySelector('[data-f="' + key + 'Net"]');
@@ -2042,15 +2221,15 @@
         '<td class="sno">' + (idx + 1) + "</td>" +
         '<td><input type="date" data-f="date" value="' + (r.date || "") + '"></td>' +
         '<td><input type="text" class="wide" list="examOptions" data-f="exam" value="' + escapeAttr(r.exam) + '" placeholder="Exam"></td>' +
-        '<td><input type="text" class="wide" data-f="mockName" value="' + escapeAttr(r.mockName) + '" placeholder="Test name"></td>' +
+        '<td class="col-mock"><input type="text" class="wide" data-f="mockName" value="' + escapeAttr(r.mockName) + '" placeholder="Test name"></td>' +
         '<td><input type="number" data-f="rank" value="' + (r.rank || "") + '" placeholder="Rank"></td>' +
         '<td><input type="number" data-f="totalCandidates" value="' + (r.totalCandidates || "") + '" placeholder="Total"></td>' +
-        '<td class="computed total-marks" style="font-weight:700;" title="Click to mark green / red">0</td>' +
-        '<td class="pct-cell"><input type="number" step="0.01" data-f="percentile" value=""><span class="auto-tag" style="display:none;">auto</span></td>' +
-        '<td><input type="number" step="0.01" data-f="accuracyOvr" style="font-weight:700;border-radius:6px;"></td>' +
-        '<td class="computed"><input type="number" data-f="attemptOvr" style="font-weight:700;"></td>' +
-        '<td class="computed right-cell"><input type="number" data-f="rightOvr" style="font-weight:700;"></td>' +
-        '<td class="computed wrong-cell"><input type="number" data-f="wrongOvr" style="font-weight:700;"></td>' +
+        '<td class="computed total-marks" style="font-weight:700;"><button type="button" class="marks-toggle" title="Click to cycle the marks colour">0</button></td>' +
+        '<td class="pct-cell ovr-cell"><input type="number" step="0.01" data-f="percentile" value=""><span class="auto-tag" style="display:none;">auto</span>' + ovrButton("percentile") + '</td>' +
+        '<td class="ovr-cell"><input type="number" step="0.01" data-f="accuracyOvr" style="font-weight:700;border-radius:6px;">' + ovrButton("accuracyOvr") + '</td>' +
+        '<td class="computed ovr-cell"><input type="number" data-f="attemptOvr" style="font-weight:700;">' + ovrButton("attemptOvr") + '</td>' +
+        '<td class="computed right-cell ovr-cell"><input type="number" data-f="rightOvr" style="font-weight:700;">' + ovrButton("rightOvr") + '</td>' +
+        '<td class="computed wrong-cell ovr-cell"><input type="number" data-f="wrongOvr" style="font-weight:700;">' + ovrButton("wrongOvr") + '</td>' +
         sectionCells +
         '<td><button class="del-btn" type="button" title="Delete row">&times;</button></td>';
       tbody.appendChild(tr);
@@ -2065,15 +2244,32 @@
           updateSummaryAndTrend(rows, sections);
         });
       });
-      tr.querySelector(".total-marks").addEventListener("click", () => {
+      tr.querySelector(".marks-toggle").addEventListener("click", () => {
         r.marksColor = r.marksColor === "pos" ? "neg" : (r.marksColor === "neg" ? "" : "pos");
         persistSoon("mocktests-data", mockData);
         updateComputedCells(tr, r, sections);
       });
+      tr.querySelectorAll(".ovr-reset").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          r[btn.dataset.ovr] = "";
+          persistSoon("mocktests-data", mockData, 0);
+          updateComputedCells(tr, r, sections);
+          updateSummaryAndTrend(rows, sections);
+        });
+      });
       tr.querySelector(".del-btn").addEventListener("click", () => {
-        mockData[activeCategory] = mockData[activeCategory].filter((x) => x.id !== r.id);
+        const category = activeCategory;
+        const list = mockData[category];
+        const index = list.findIndex((x) => x.id === r.id);
+        if (index < 0) return;
+        const [removed] = list.splice(index, 1);
         persistSoon("mocktests-data", mockData, 0);
         renderSheet();
+        undoToast("Test row deleted.", () => {
+          mockData[category].splice(Math.min(index, mockData[category].length), 0, removed);
+          persistSoon("mocktests-data", mockData, 0);
+          if (activeCategory === category) renderSheet();
+        });
       });
     });
 
@@ -2096,12 +2292,11 @@
 
   function drawTrend(rows) {
     const svg = $("#trendSvg");
+    const wrap = svg.closest(".trend-wrap");
+    if (wrap) wrap.hidden = rows.length === 0;
     svg.innerHTML = "";
     const sorted = rows.slice().sort((a, b) => a.date < b.date ? -1 : 1).slice(-12);
-    if (sorted.length === 0) {
-      svg.innerHTML = '<text x="300" y="60" fill="var(--md-on-surface-variant)" font-size="12" text-anchor="middle" font-family="Inter">Log tests in this sheet to see your marks trend</text>';
-      return;
-    }
+    if (sorted.length === 0) return;
     const W = 600, H = 120, padL = 36, padR = 16, padT = 14, padB = 22;
     const plotW = W - padL - padR;
     const plotH = H - padT - padB;
@@ -2118,7 +2313,7 @@
     [0, 0.5, 1].forEach((t) => {
       const y = padT + plotH - t * plotH;
       html += '<line x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y + '" stroke="var(--md-outline-variant)" stroke-width="1"/>';
-      html += '<text x="' + (padL - 6) + '" y="' + (y + 3) + '" font-size="9" fill="var(--md-on-surface-variant)" text-anchor="end" font-family="monospace">' + Math.round(maxV * t) + "</text>";
+      html += '<text x="' + (padL - 6) + '" y="' + (y + 3) + '" font-size="11" fill="var(--md-on-surface-variant)" text-anchor="end" font-family="system-ui, sans-serif">' + Math.round(maxV * t) + "</text>";
     });
     const linePath = pts.map((p, i) => (i === 0 ? "M" : "L") + p.x.toFixed(1) + "," + p.y.toFixed(1)).join(" ");
     const areaPath = linePath + " L" + pts[pts.length - 1].x.toFixed(1) + "," + (padT + plotH) + " L" + pts[0].x.toFixed(1) + "," + (padT + plotH) + " Z";
@@ -2134,6 +2329,7 @@
 
   let calMonth = new Date(todayStr() + "T00:00:00");
   calMonth.setDate(1);
+  let selectedDay = "";
 
   async function initCalendar() {
     events = await store.load("calendar-events", []);
@@ -2190,9 +2386,16 @@
         });
       });
       del.addEventListener("click", () => {
-        events = events.filter((x) => x.id !== ev.id);
+        const index = events.findIndex((x) => x.id === ev.id);
+        if (index < 0) return;
+        const [removed] = events.splice(index, 1);
         persist("calendar-events", events);
         renderCalendar();
+        undoToast("Event deleted.", () => {
+          events.splice(Math.min(index, events.length), 0, removed);
+          persist("calendar-events", events);
+          renderCalendar();
+        });
       });
 
       row.append(title, date, badge, del);
@@ -2213,6 +2416,10 @@
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const daysInPrevMonth = new Date(year, month, 0).getDate();
     const todayIso = todayStr();
+    const monthKey = year + "-" + String(month + 1).padStart(2, "0");
+    if (!selectedDay || !selectedDay.startsWith(monthKey)) {
+      selectedDay = todayIso.startsWith(monthKey) ? todayIso : monthKey + "-01";
+    }
 
     const byDate = {};
     events.forEach((ev) => {
@@ -2239,7 +2446,7 @@
         const cls = diff > 0 ? "upcoming" : (diff === 0 ? "today-pill" : "past");
         return '<div class="month-pill ' + cls + '" data-id="' + ev.id + '" title="' + escapeAttr(ev.title) + '">' + escapeHtml(ev.title) + "</div>";
       }).join("");
-      html += '<div class="month-cell' + (outside ? " outside" : "") + (isToday ? " today" : "") + (dayEvents.length ? " has-events" : "") + '" data-date="' + iso + '">' +
+      html += '<div class="month-cell' + (outside ? " outside" : "") + (isToday ? " today" : "") + (dayEvents.length ? " has-events" : "") + (iso === selectedDay ? " selected" : "") + '" data-date="' + iso + '" role="button" tabindex="' + (iso === selectedDay ? "0" : "-1") + '" aria-pressed="' + (iso === selectedDay ? "true" : "false") + '" aria-label="' + cellDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) + (dayEvents.length ? ", " + dayEvents.length + " event" + (dayEvents.length === 1 ? "" : "s") : "") + '">' +
         '<div class="cell-date">' + cellDate.getDate() + "</div>" + pillsHtml + "</div>";
     }
     grid.innerHTML = html;
@@ -2255,11 +2462,84 @@
         }
       });
     });
+
+    const chooseDay = (iso) => {
+      selectedDay = iso;
+      grid.querySelectorAll(".month-cell").forEach((c) => {
+        const on = c.dataset.date === iso;
+        c.classList.toggle("selected", on);
+        c.tabIndex = on ? 0 : -1;
+        c.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      renderDayEvents(iso);
+    };
+
     grid.querySelectorAll(".month-cell").forEach((c) => {
       c.addEventListener("click", () => {
+        chooseDay(c.dataset.date);
         $("#eventDateInput").value = c.dataset.date;
-        $("#eventTitleInput").focus();
       });
+      c.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          chooseDay(c.dataset.date);
+          $("#eventDateInput").value = c.dataset.date;
+        }
+      });
+    });
+
+    renderDayEvents(selectedDay);
+  }
+
+  function renderDayEvents(iso) {
+    const host = $("#dayEvents");
+    if (!host) return;
+    host.innerHTML = "";
+    const dayList = events
+      .filter((ev) => ev.date === iso)
+      .sort((a, b) => String(a.title).localeCompare(String(b.title)));
+    const label = new Date(iso + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+
+    const head = document.createElement("div");
+    head.className = "day-events-head";
+    head.textContent = label + (iso === todayStr() ? " · Today" : "");
+    host.appendChild(head);
+
+    if (!dayList.length) {
+      const empty = document.createElement("div");
+      empty.className = "day-events-empty";
+      empty.textContent = "No events on this day.";
+      host.appendChild(empty);
+      return;
+    }
+
+    dayList.forEach((ev) => {
+      const diff = daysDiffFromToday(ev.date);
+      let badgeClass, badgeText;
+      if (diff > 0) { badgeClass = "upcoming"; badgeText = diff + "d left"; }
+      else if (diff === 0) { badgeClass = "today"; badgeText = "Today"; }
+      else { badgeClass = "past"; badgeText = Math.abs(diff) + "d past"; }
+
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "day-event";
+      row.dataset.id = ev.id;
+      const title = document.createElement("span");
+      title.className = "day-event-title";
+      title.textContent = ev.title;
+      const badge = document.createElement("span");
+      badge.className = "event-badge " + badgeClass;
+      badge.textContent = badgeText;
+      row.append(title, badge);
+      row.addEventListener("click", () => {
+        const target = document.querySelector('.event-item[data-id="' + ev.id + '"]');
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "center" });
+          target.style.borderColor = "var(--md-primary)";
+          setTimeout(() => { target.style.borderColor = ""; }, 1200);
+        }
+      });
+      host.appendChild(row);
     });
   }
 
@@ -2269,13 +2549,16 @@
     const title = titleInp.value.trim();
     const date = dateInp.value;
     if (!title || !date) {
-      showToast("⚠️ Add both a title and a date.");
+      showToast(toastIcon("i-alert") + "Add both a title and a date.");
       return;
     }
     events.push({ id: uid(), title: title, date: date });
     persist("calendar-events", events);
     titleInp.value = "";
     dateInp.value = "";
+    selectedDay = date;
+    calMonth = new Date(date + "T00:00:00");
+    calMonth.setDate(1);
     renderCalendar();
   }
 
@@ -2309,6 +2592,9 @@
     const maxMin = Math.max(25, ...weekDates.map((d) => weekLog.filter((l) => l.date === d).reduce((a, b) => a + b.minutes, 0)));
     const barW = plotW / 7 * 0.6;
     let html = "";
+    if (weekMinutes === 0) {
+      html += '<text x="' + (padL + plotW / 2) + '" y="' + (padT + plotH / 2) + '" font-size="12" fill="var(--md-on-surface-variant)" text-anchor="middle" font-family="system-ui, sans-serif">No focus sessions this week</text>';
+    }
     weekDates.forEach((d, i) => {
       const mins = weekLog.filter((l) => l.date === d).reduce((a, b) => a + b.minutes, 0);
       const x = padL + (i + 0.5) * (plotW / 7) - barW / 2;
@@ -2316,8 +2602,8 @@
       const y = padT + plotH - barH;
       html += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + barH.toFixed(1) + '" rx="4" fill="var(--md-primary)"/>';
       const lbl = new Date(d + "T00:00:00").toLocaleDateString("en-US", { weekday: "short" });
-      html += '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (H - 6) + '" font-size="9" fill="var(--md-on-surface-variant)" text-anchor="middle" font-family="monospace">' + lbl + "</text>";
-      if (mins > 0) html += '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (y - 4).toFixed(1) + '" font-size="9" fill="var(--md-primary)" text-anchor="middle" font-family="monospace">' + mins + "</text>";
+      html += '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (H - 6) + '" font-size="11" fill="var(--md-on-surface-variant)" text-anchor="middle" font-family="system-ui, sans-serif">' + lbl + "</text>";
+      if (mins > 0) html += '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (y - 4).toFixed(1) + '" font-size="11" fill="var(--md-primary)" text-anchor="middle" font-family="system-ui, sans-serif">' + mins + "</text>";
     });
     svg.innerHTML = html;
 
@@ -2380,7 +2666,7 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
-    showToast("📁 Backup downloaded. Import it in Chrome or Firefox to move your data across browsers.");
+    showToast(toastIcon("i-download") + "Backup downloaded. Import it in Chrome or Firefox to move your data across browsers.");
   }
 
   async function importBackupFile(file) {
@@ -2440,9 +2726,9 @@
       updateStatsUI();
       renderDockSettings();
       renderStorageUi();
-      showToast("✅ Backup imported successfully.");
+      showToast(toastIcon("i-check") + "Backup imported successfully.");
     } catch (e) {
-      showToast("⚠️ Could not read that file — make sure it’s a Study Deck backup JSON.");
+      showToast(toastIcon("i-alert") + "Could not read that file — make sure it’s a Study Deck backup JSON.");
     }
   }
 
@@ -2502,6 +2788,21 @@
       const btn = e.target.closest("button[data-settings-tab]");
       if (btn) selectSettingsTab(btn.dataset.settingsTab);
     });
+    $("#settingsTabs").addEventListener("keydown", (e) => {
+      const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
+      if (!keys.includes(e.key)) return;
+      const tabs = $$("#settingsTabs .seg-btn");
+      if (!tabs.length) return;
+      const current = Math.max(0, tabs.findIndex((b) => b.classList.contains("active")));
+      let next = current;
+      if (e.key === "ArrowLeft") next = (current - 1 + tabs.length) % tabs.length;
+      else if (e.key === "ArrowRight") next = (current + 1) % tabs.length;
+      else if (e.key === "Home") next = 0;
+      else next = tabs.length - 1;
+      e.preventDefault();
+      tabs[next].focus();
+      selectSettingsTab(tabs[next].dataset.settingsTab);
+    });
 
     /* theme / background segmented controls */
     $$("#themeSeg [data-theme-choice]").forEach((b) => {
@@ -2558,7 +2859,6 @@
     });
 
     /* dialogs */
-    $("#settingsBtn").addEventListener("click", () => openSettings("appearance"));
     $("#railSettingsBtn").addEventListener("click", () => openSettings("appearance"));
     $("#settingsClose").addEventListener("click", closeSettings);
     $("#settingsDone").addEventListener("click", closeSettings);
@@ -2574,10 +2874,6 @@
 
     $("#appsBtn").addEventListener("click", openApps);
     $("#appsClose").addEventListener("click", closeApps);
-    $("#appsSettings").addEventListener("click", () => {
-      closeApps();
-      openSettings("layout");
-    });
     $("#appsDialog").addEventListener("click", (e) => {
       if (e.target === $("#appsDialog")) closeApps();
     });
@@ -2642,7 +2938,9 @@
       clearInterval(pomoInterval);
       pomoInterval = null;
       pomo.running = false;
+      pomo.endAt = null;
       pomo.remaining = modeLen(pomo.mode);
+      savePomoData();
       updatePomoUI();
     });
 
@@ -2659,7 +2957,9 @@
       clearInterval(pomoInterval);
       pomoInterval = null;
       pomo.running = false;
+      pomo.endAt = null;
       pomo.remaining = modeLen(pomo.mode);
+      savePomoData();
       updatePomoUI();
     });
     $$(".mode-btn").forEach((b) => b.addEventListener("click", () => switchMode(b.dataset.mode, false)));
@@ -2672,6 +2972,7 @@
         durations[keys[i]] = v;
         if (pomo.mode === keys[i] && !pomo.running) {
           pomo.remaining = v * 60;
+          pomo.endAt = null;
           updatePomoUI();
         }
         savePomoData();
@@ -2679,12 +2980,25 @@
     });
     (function initPomoTriggerTouch() {
       const trigger = $("#pomoTrigger");
+      const setOpen = (open) => {
+        trigger.classList.toggle("force-open", open);
+        trigger.setAttribute("aria-expanded", open ? "true" : "false");
+      };
+      trigger.setAttribute("aria-expanded", "false");
       trigger.addEventListener("click", (e) => {
-        if (e.target.closest(".pomo-popup")) return;
-        trigger.classList.toggle("force-open");
+        if (e.target.closest("#pomoPopup")) return;
+        setOpen(!trigger.classList.contains("force-open"));
+      });
+      trigger.addEventListener("keydown", (e) => {
+        if (e.target.closest("#pomoPopup")) return;
+        if (e.key === "Escape") setOpen(false);
       });
       document.addEventListener("click", (e) => {
-        if (!trigger.contains(e.target)) trigger.classList.remove("force-open");
+        const popup = document.querySelector(".pomo-popup");
+        if (!trigger.contains(e.target) && !(popup && popup.contains(e.target))) setOpen(false);
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") setOpen(false);
       });
     })();
 
@@ -2696,9 +3010,10 @@
     });
 
     /* calendar */
-    $("#prevMonthBtn").addEventListener("click", () => { calMonth.setMonth(calMonth.getMonth() - 1); renderMonthGrid(); });
-    $("#nextMonthBtn").addEventListener("click", () => { calMonth.setMonth(calMonth.getMonth() + 1); renderMonthGrid(); });
+    $("#prevMonthBtn").addEventListener("click", () => { selectedDay = ""; calMonth.setMonth(calMonth.getMonth() - 1); renderMonthGrid(); });
+    $("#nextMonthBtn").addEventListener("click", () => { selectedDay = ""; calMonth.setMonth(calMonth.getMonth() + 1); renderMonthGrid(); });
     $("#todayMonthBtn").addEventListener("click", () => {
+      selectedDay = todayStr();
       calMonth = new Date(todayStr() + "T00:00:00");
       calMonth.setDate(1);
       renderMonthGrid();
@@ -2723,7 +3038,7 @@
       store.setSyncEnabled(settings.syncEnabled);
       await store.save("ui-settings", settings);
       if (settings.syncEnabled) {
-        showToast("☁️ Browser sync enabled.");
+        showToast(toastIcon("i-cloud") + "Browser sync enabled.");
         await store.pushAll();
       } else {
         showToast("Sync paused — data stays on this device.");
@@ -2808,7 +3123,6 @@
       if (widgetLayer) widgetLayer.classList.remove("no-anim");
     });
     setupDockMagnify();
-    setupWidgetDragging();
 
     const dateInput = $("#todoDate");
     if (dateInput) dateInput.value = todayStr();
@@ -2817,6 +3131,7 @@
 
     renderHome();
     updateDateTime();
+    applyWidgetLayout();
     setInterval(updateDateTime, 1000);
     setInterval(updateHomeGreeting, 60000);
     store.onStatus(renderSyncStatus);

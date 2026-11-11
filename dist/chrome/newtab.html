@@ -49,6 +49,9 @@
   <symbol id="i-drag" viewBox="0 0 24 24"><path d="M7 4h2v2H7V4zm0 7h2v2H7v-2zm0 7h2v2H7v-2zm8-14h2v2h-2V4zm0 7h2v2h-2v-2zm0 7h2v2h-2v-2z"/></symbol>
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M12 3 2 12h3v9h6v-6h2v6h6v-9h3L12 3z"/></symbol>
   <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 2l1.9 5.8L20 9.7l-5 3.7 1.7 6.1L12 16.2 7.3 19.5 9 13.4 4 9.7l6.1-1.9L12 2z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></symbol>
 </svg>
 
 <div class="ambient" aria-hidden="true">
@@ -77,13 +80,9 @@
         <span class="rail-icon-wrap"><svg class="icon"><use href="#i-chart"></use></svg></span>
         <span class="rail-label">Tracker</span>
       </button>
-      <button type="button" class="rail-item" data-tab="calendar">
+      <button type="button" class="rail-item" data-tab="planner">
         <span class="rail-icon-wrap"><svg class="icon"><use href="#i-calendar"></use></svg></span>
-        <span class="rail-label">Calendar</span>
-      </button>
-      <button type="button" class="rail-item" data-tab="notes">
-        <span class="rail-icon-wrap"><svg class="icon"><use href="#i-note"></use></svg></span>
-        <span class="rail-label">Notes</span>
+        <span class="rail-label">Planner</span>
       </button>
       <button type="button" class="rail-item" data-tab="review">
         <span class="rail-icon-wrap"><svg class="icon"><use href="#i-insights"></use></svg></span>
@@ -92,15 +91,16 @@
     </nav>
 
     <div class="rail-foot">
-      <div class="pomo-trigger" id="pomoTrigger" tabindex="0" role="button" aria-label="Pomodoro timer">
+      <button type="button" class="pomo-trigger" id="pomoTrigger" aria-haspopup="dialog" aria-expanded="false" aria-label="Pomodoro timer">
         <span class="live-dot"></span>
         <span class="pomo-trigger-copy">
           <span class="trigger-time" id="triggerTime">25:00</span>
           <span class="trigger-mode" id="triggerMode">Focus</span>
         </span>
+      </button>
 
-        <div class="pomo-popup" role="dialog" aria-label="Pomodoro timer controls">
-          <span class="eyebrow">Pomodoro</span>
+      <div class="pomo-popup" id="pomoPopup" role="dialog" aria-labelledby="pomoPopupTitle">
+        <h2 class="eyebrow" id="pomoPopupTitle">Pomodoro</h2>
           <div class="pomo-modes-mini">
             <button type="button" class="mode-btn active" data-mode="work">Focus</button>
             <button type="button" class="mode-btn" data-mode="short">Short</button>
@@ -129,7 +129,6 @@
               <div class="row"><span>Long (min)</span><input type="number" id="longLen" min="1" max="90" value="15"></div>
             </div>
           </details>
-        </div>
       </div>
 
       <button type="button" class="rail-item rail-small" id="themeToggle" title="Toggle light / dark theme">
@@ -151,7 +150,7 @@
           <section class="panel home-hero" id="homeHero">
             <div class="home-hero-top">
               <div class="home-greeting" id="homeGreetingBlock">
-                <span class="eyebrow"><svg class="icon"><use href="#i-sparkle"></use></svg> <span id="homeDaypart">Good morning</span></span>
+                <span class="eyebrow"><svg class="icon"><use href="#i-sparkle"></use></svg> <span id="homeDaypart">Today</span></span>
                 <h1 id="homeGreeting">Welcome back</h1>
                 <p class="sub" id="homeSummary">Your day at a glance.</p>
               </div>
@@ -253,7 +252,7 @@
             <div>
               <span class="eyebrow"><svg class="icon"><use href="#i-chart"></use></svg> Sheet</span>
               <h1>Mock test tracker</h1>
-              <p class="sub">Log every attempt, section-wise. Total marks adds up automatically. Click the Total Marks cell to mark it green or red.</p>
+              <p class="sub">Log every attempt, section-wise. Total marks adds up automatically. Right, Wrong, Attempt and Accuracy calculate too; typing over one makes it an override, and its ↺ button restores the calculation.</p>
             </div>
           </div>
           <div class="sheet-tabs" id="sheetTabs"></div>
@@ -276,8 +275,8 @@
         </section>
       </div>
 
-      <!-- ================= CALENDAR ================= -->
-      <div class="tab-panel" data-panel="calendar">
+      <!-- ================= PLANNER (calendar + notes) ================= -->
+      <div class="tab-panel" data-panel="planner">
         <section class="panel">
           <div class="panel-head">
             <div>
@@ -300,6 +299,7 @@
                 <button type="button" class="btn text small" id="todayMonthBtn">Today</button>
               </div>
               <div class="month-grid" id="monthGrid"></div>
+              <div class="day-events" id="dayEvents" aria-live="polite"></div>
             </div>
 
             <div class="calendar-col-list">
@@ -315,15 +315,12 @@
             </div>
           </div>
         </section>
-      </div>
 
-      <!-- ================= NOTES ================= -->
-      <div class="tab-panel" data-panel="notes">
         <section class="panel single">
           <div class="panel-head">
             <div>
               <span class="eyebrow"><svg class="icon"><use href="#i-note"></use></svg> Notes</span>
-              <h1>Quick capture</h1>
+              <h2 class="small-heading">Quick capture</h2>
               <p class="sub">Formulas, doubts, reminders to yourself.</p>
             </div>
           </div>
@@ -374,9 +371,6 @@
 <div class="widget-layer" id="widgetLayer" aria-label="Desktop widgets">
 
   <section class="widget widget-clock" data-widget="clock" aria-label="Clock widget">
-    <button type="button" class="widget-grip" data-widget-grip="clock" title="Drag clock" aria-label="Drag clock widget">
-      <svg class="icon"><use href="#i-drag"></use></svg>
-    </button>
     <div class="clock" id="clockBlock" data-style="digital">
       <div class="clock-time">—</div>
       <div class="clock-date">—</div>
@@ -384,9 +378,6 @@
   </section>
 
   <section class="widget widget-search" data-widget="search" aria-label="Search widget">
-    <button type="button" class="widget-grip" data-widget-grip="search" title="Drag search" aria-label="Drag search widget">
-      <svg class="icon"><use href="#i-drag"></use></svg>
-    </button>
     <form class="search" id="searchForm" role="search" autocomplete="off">
       <span class="search-logo" aria-hidden="true">
         <svg viewBox="0 0 48 48">
@@ -406,27 +397,18 @@
     </form>
   </section>
 
-  <section class="widget widget-actions" data-widget="actions" aria-label="Quick actions widget">
-    <button type="button" class="widget-grip" data-widget-grip="actions" title="Drag quick actions" aria-label="Drag quick actions widget">
-      <svg class="icon"><use href="#i-drag"></use></svg>
-    </button>
+  <section class="widget widget-actions" data-widget="actions" aria-label="Google apps and bookmarks">
     <div class="top-actions">
-      <button type="button" class="icon-btn" id="bookmarksBtn" title="Bookmarks">
-        <svg class="icon"><use href="#i-bookmark-outline"></use></svg>
-      </button>
       <button type="button" class="icon-btn" id="appsBtn" title="Google apps">
         <svg class="icon"><use href="#i-apps"></use></svg>
       </button>
-      <button type="button" class="icon-btn" id="settingsBtn" title="Customize Study Deck">
-        <svg class="icon"><use href="#i-settings"></use></svg>
+      <button type="button" class="icon-btn" id="bookmarksBtn" title="Bookmarks">
+        <svg class="icon"><use href="#i-bookmark-outline"></use></svg>
       </button>
     </div>
   </section>
 
   <section class="widget widget-dock" data-widget="dock" aria-label="Favourites widget">
-    <button type="button" class="widget-grip" data-widget-grip="dock" title="Drag favourites" aria-label="Drag favourites widget">
-      <svg class="icon"><use href="#i-drag"></use></svg>
-    </button>
     <div class="dock-wrap" id="dockWrap">
       <div class="dock" id="dock" aria-label="Favourite bookmarks"></div>
     </div>
@@ -449,7 +431,6 @@
     <div class="apps-grid" id="appsGrid"></div>
     <footer class="apps-foot">
       <span class="muted">Tip: you can hide the apps button from Settings → Layout.</span>
-      <button type="button" class="btn text small" id="appsSettings">Customize</button>
     </footer>
   </div>
 </dialog>
@@ -490,17 +471,17 @@
     </header>
 
     <div class="settings-tabs" id="settingsTabs" role="tablist" aria-label="Settings sections">
-      <button type="button" class="seg-btn active" data-settings-tab="appearance" role="tab" aria-selected="true">Appearance</button>
-      <button type="button" class="seg-btn" data-settings-tab="home" role="tab" aria-selected="false">Home</button>
-      <button type="button" class="seg-btn" data-settings-tab="layout" role="tab" aria-selected="false">Layout</button>
-      <button type="button" class="seg-btn" data-settings-tab="search" role="tab" aria-selected="false">Search</button>
-      <button type="button" class="seg-btn" data-settings-tab="dock" role="tab" aria-selected="false">Dock</button>
-      <button type="button" class="seg-btn" data-settings-tab="data" role="tab" aria-selected="false">Data &amp; sync</button>
+      <button type="button" class="seg-btn active" id="settingsTab-appearance" data-settings-tab="appearance" role="tab" aria-selected="true" aria-controls="settingsPanel-appearance" tabindex="0">Appearance</button>
+      <button type="button" class="seg-btn" id="settingsTab-home" data-settings-tab="home" role="tab" aria-selected="false" aria-controls="settingsPanel-home" tabindex="-1">Home</button>
+      <button type="button" class="seg-btn" id="settingsTab-layout" data-settings-tab="layout" role="tab" aria-selected="false" aria-controls="settingsPanel-layout" tabindex="-1">Layout</button>
+      <button type="button" class="seg-btn" id="settingsTab-search" data-settings-tab="search" role="tab" aria-selected="false" aria-controls="settingsPanel-search" tabindex="-1">Search</button>
+      <button type="button" class="seg-btn" id="settingsTab-dock" data-settings-tab="dock" role="tab" aria-selected="false" aria-controls="settingsPanel-dock" tabindex="-1">Dock</button>
+      <button type="button" class="seg-btn" id="settingsTab-data" data-settings-tab="data" role="tab" aria-selected="false" aria-controls="settingsPanel-data" tabindex="-1">Data &amp; sync</button>
     </div>
 
     <div class="settings-body">
       <!-- Appearance -->
-      <section class="settings-section" data-settings-panel="appearance">
+      <section class="settings-section" id="settingsPanel-appearance" role="tabpanel" aria-labelledby="settingsTab-appearance" data-settings-panel="appearance">
         <div class="setting-group">
           <h3>Theme</h3>
           <p class="setting-desc">Follow the system or lock the deck to light or dark.</p>
@@ -513,7 +494,7 @@
 
         <div class="setting-group">
           <h3>Clock</h3>
-          <p class="setting-desc">Pick a Material You clock face. Drag the clock on the page to move it anywhere.</p>
+          <p class="setting-desc">Pick a Material You clock face for the floating clock.</p>
           <div class="clock-choices" id="clockChoices"></div>
           <label class="setting-row">
             <span class="setting-copy"><span class="setting-title">Show seconds</span><span class="setting-desc">Include seconds in digital faces and the analog hand.</span></span>
@@ -577,7 +558,7 @@
       </section>
 
       <!-- Home -->
-      <section class="settings-section" data-settings-panel="home" hidden>
+      <section class="settings-section" id="settingsPanel-home" role="tabpanel" aria-labelledby="settingsTab-home" data-settings-panel="home" hidden>
         <div class="setting-group">
           <h3>Greeting</h3>
           <p class="setting-desc">Make the Home tab yours. The greeting changes with the time of day.</p>
@@ -631,16 +612,16 @@
       </section>
 
       <!-- Layout -->
-      <section class="settings-section" data-settings-panel="layout" hidden>
+      <section class="settings-section" id="settingsPanel-layout" role="tabpanel" aria-labelledby="settingsTab-layout" data-settings-panel="layout" hidden>
         <h3>Top bar &amp; widgets</h3>
         <p class="setting-desc">Choose which pieces of the deck are visible. Settings always stays available.</p>
 
         <label class="setting-row">
-          <span class="setting-copy"><span class="setting-title">Clock</span><span class="setting-desc">Show the time and date in the top-left.</span></span>
+          <span class="setting-copy"><span class="setting-title">Clock</span><span class="setting-desc">Show the floating clock. Set its edge under Widget positions.</span></span>
           <span class="switch"><input type="checkbox" data-setting="showClock"><span class="track"></span><span class="thumb"></span></span>
         </label>
         <label class="setting-row">
-          <span class="setting-copy"><span class="setting-title">Google search bar</span><span class="setting-desc">Centered search field at the top.</span></span>
+          <span class="setting-copy"><span class="setting-title">Search bar</span><span class="setting-desc">Show the floating search field. Set its edge under Widget positions.</span></span>
           <span class="switch"><input type="checkbox" data-setting="showSearch"><span class="track"></span><span class="thumb"></span></span>
         </label>
         <label class="setting-row">
@@ -648,11 +629,11 @@
           <span class="switch"><input type="checkbox" data-setting="showPomodoro"><span class="track"></span><span class="thumb"></span></span>
         </label>
         <label class="setting-row">
-          <span class="setting-copy"><span class="setting-title">Bookmarks button</span><span class="setting-desc">Top-right button that opens the browser bookmarks panel.</span></span>
+          <span class="setting-copy"><span class="setting-title">Bookmarks button</span><span class="setting-desc">Floating launcher at the top-right that opens the browser bookmarks panel.</span></span>
           <span class="switch"><input type="checkbox" data-setting="showBookmarksBtn"><span class="track"></span><span class="thumb"></span></span>
         </label>
         <label class="setting-row">
-          <span class="setting-copy"><span class="setting-title">Google apps button</span><span class="setting-desc">Top-right launcher for Google apps.</span></span>
+          <span class="setting-copy"><span class="setting-title">Google apps button</span><span class="setting-desc">Floating launcher at the top-right for Google apps.</span></span>
           <span class="switch"><input type="checkbox" data-setting="showAppsBtn"><span class="track"></span><span class="thumb"></span></span>
         </label>
         <label class="setting-row">
@@ -662,22 +643,14 @@
 
         <div class="setting-group widget-pos-group">
           <h3>Widget positions</h3>
-          <p class="setting-desc">Place the clock, search, quick actions and dock anywhere on the page. Use the arrow pad for a preset, or drag a widget’s grip for free placement.</p>
+          <p class="setting-desc">Place the clock, search, apps and dock anywhere on the page with the arrow pad.</p>
           <div class="widget-pos-list" id="widgetPosList"></div>
-          <label class="setting-row">
-            <span class="setting-copy"><span class="setting-title">Drag widgets</span><span class="setting-desc">Show the grip handle and allow free placement.</span></span>
-            <span class="switch"><input type="checkbox" data-setting="widgetDrag"><span class="track"></span><span class="thumb"></span></span>
-          </label>
-          <label class="setting-row">
-            <span class="setting-copy"><span class="setting-title">Snap to grid</span><span class="setting-desc">Align free positions to a 12-column grid.</span></span>
-            <span class="switch"><input type="checkbox" data-setting="widgetSnap"><span class="track"></span><span class="thumb"></span></span>
-          </label>
           <button type="button" class="btn text small" id="widgetReset">Reset widget positions</button>
         </div>
       </section>
 
       <!-- Search -->
-      <section class="settings-section" data-settings-panel="search" hidden>
+      <section class="settings-section" id="settingsPanel-search" role="tabpanel" aria-labelledby="settingsTab-search" data-settings-panel="search" hidden>
         <div class="setting-group">
           <h3>Search engine</h3>
           <p class="setting-desc">Used when the text you type is not a URL.</p>
@@ -696,11 +669,6 @@
           <span class="switch"><input type="checkbox" data-setting="searchNewTab"><span class="track"></span><span class="thumb"></span></span>
         </label>
 
-        <label class="setting-row">
-          <span class="setting-copy"><span class="setting-title">Search from the address bar too</span><span class="setting-desc">Firefox only: set Study Deck as your home page for omnibox searches.</span></span>
-          <span class="badge-soft">Browser setting</span>
-        </label>
-
         <div class="info-card">
           <svg class="icon"><use href="#i-search"></use></svg>
           <div>
@@ -711,7 +679,7 @@
       </section>
 
       <!-- Dock -->
-      <section class="settings-section" data-settings-panel="dock" hidden>
+      <section class="settings-section" id="settingsPanel-dock" role="tabpanel" aria-labelledby="settingsTab-dock" data-settings-panel="dock" hidden>
         <div class="setting-group">
           <h3>Dock favourites</h3>
           <p class="setting-desc">These are the icons in the bottom dock. Drag order with the arrows.</p>
@@ -742,7 +710,7 @@
       </section>
 
       <!-- Data -->
-      <section class="settings-section" data-settings-panel="data" hidden>
+      <section class="settings-section" id="settingsPanel-data" role="tabpanel" aria-labelledby="settingsTab-data" data-settings-panel="data" hidden>
         <div class="setting-group">
           <h3>Sync</h3>
           <p class="setting-desc">Study Deck saves to this browser. Turn on browser sync to share data between devices signed into the same Chrome or Firefox account.</p>

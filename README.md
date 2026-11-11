@@ -3,9 +3,9 @@
 A Material You (Material 3) study dashboard that replaces your browser's new-tab
 page. It opens on a customisable **Home** dashboard with a clock, Google search,
 today's tasks and a focus timer, then keeps the original Study Deck features:
-to-do log, mock-test tracker, calendar, notes and weekly review. It also adds a
-Google apps launcher, browser bookmarks panel, a macOS-style favourites dock,
-placeable widgets and a full customisation panel.
+to-do log, mock-test tracker, planner (merged calendar + notes) and weekly review.
+It also adds a Google apps launcher, browser bookmarks panel, a macOS-style
+favourites dock, placeable widgets and a full customisation panel.
 
 Works as a **Chrome / Edge / Brave** extension and as a **Firefox** extension.
 
@@ -13,25 +13,30 @@ Works as a **Chrome / Edge / Brave** extension and as a **Firefox** extension.
 
 ## Features
 
-- **To-do log** grouped by date, with optional reminder times.
+- **To-do log** grouped by date, with optional reminder times and a visible
+  overdue tag. Deleting a task, note, event or tracker row offers **Undo**.
 - **Home dashboard** with a large clock, Google search, today’s task list, a
-  focus-timer card, quick links from your dock, and a time-of-day greeting.
+  focus-timer card, quick links from your dock, and a dated greeting.
 - **Mock test tracker** with per-section marks, totals, accuracy, percentile and
-  a marks-trend chart.
-- **Calendar** for exam dates and events, with a countdown badge.
-- **Notes** for quick capture.
+  a marks-trend chart. Computed cells accept manual overrides, and a ↺ button
+  restores the calculated value. S.No and Mock Name stay frozen while the sheet
+  scrolls sideways.
+- **Planner** tab merging the calendar (exam dates and events with countdown
+  badges, plus a per-day event drill-down) and quick notes for capture.
 - **Weekly review** across tasks, focus time, notes and mock tests.
-- **Pomodoro timer** in the navigation rail and on the Home tab.
+- **Pomodoro timer** in the navigation rail and on the Home tab. A running timer
+  stores its end time, so it survives background-tab throttling and reloads.
 - **Google search bar** in the top bar and on Home (Google, Bing, DuckDuckGo,
-  Brave, Ecosia or YouTube; URLs open directly).
-- **Google apps launcher** (18 apps).
+  Brave, Ecosia or YouTube; URLs open directly) with matching engine branding.
+- **Google apps launcher** (18 apps) opens as a popup anchored to its icon.
 - **Browser bookmarks panel** with search, powered by the browser's bookmarks.
 - **Favourites dock** with macOS-style hover magnification and drag-free
   reordering from Settings.
 - **Five Material You clock faces** — Digital, Stacked, Minimal, Analog and Chip
   — with optional seconds and date.
-- **Widget placement**: put the clock, search, quick actions and dock on any
-  edge or corner, or drag them anywhere with a mouse or keyboard.
+- **Widget placement**: put the clock, search, apps and favourites dock on any
+  edge or corner with the arrow pad in **Settings → Layout → Widget positions**.
+  **Reset widget positions** restores the defaults.
 - **Glassmorphic surfaces**: Solid, Glass and Frosted modes with adjustable
   strength and an optional accent glow.
 - **Material You theming**: 8 accent palettes, system/light/dark mode, three
@@ -117,7 +122,7 @@ environment, because the browser extension APIs are not available.
 
 ## Customisation
 
-Click the gear (top right or bottom of the rail) to open **Customize Study
+Click the **Settings** icon in the navigation rail to open **Customize Study
 Deck**. The deck opens on **Home**; use the left rail (or top rail on narrow
 windows) to switch between Home and the study sections.
 
@@ -125,19 +130,18 @@ windows) to switch between Home and the study sections.
 | --- | --- |
 | **Appearance** | Theme mode, clock face, seconds/date, accent colour, background, surface style (solid/glass/frosted), glass strength and glow, animations, compact density |
 | **Home** | Greeting name, home layout, show/hide greeting, clock, search, quick links, tasks and focus card; hide floating widgets while Home is open |
-| **Layout** | Show/hide clock, search bar, Pomodoro, bookmarks button, apps button and dock; place each widget with the 3×3 anchor pad, enable dragging and grid snapping, or reset positions |
+| **Layout** | Show/hide clock, search bar, Pomodoro, bookmarks button, apps button and dock; place each widget with the 3×3 arrow pad or reset positions |
 | **Search** | Search engine and whether results open in a new tab |
 | **Dock** | Add, rename, reorder and remove favourites; reset to defaults; magnification, new-tab behaviour and icon size |
 | **Data & sync** | Browser sync toggle, storage usage, export/import, clear all data |
 
 ### Widget placement
 
-Open **Settings → Layout → Widget positions**. Every widget (clock, search,
-quick actions and favourites dock) can be snapped to the left, centre or right
-of the top, middle or bottom of the page. For free placement, hover a widget
-and drag its grip handle. With a grip focused, arrow keys nudge the widget;
-hold `Shift` for larger steps. **Snap to grid** aligns free positions to a 12×12
-grid. **Reset widget positions** restores the defaults.
+Open **Settings → Layout → Widget positions**. Every widget (clock, search, apps
+and favourites dock) can be snapped to the left, centre or right of the top, middle
+or bottom of the page. **Reset widget positions** restores the defaults. Widget
+placement is set with the arrow pad; drag handles and free-form dragging were
+removed so widgets can no longer overlap.
 
 Keyboard shortcuts: `/` or `Ctrl`/`Cmd` + `K` focuses search; `Esc` closes
 open panels and dialogs.
@@ -200,10 +204,17 @@ study-deck-extension/
 | --- | --- |
 | `storage` | Save tasks, notes, tracker data and settings; optional `storage.sync` |
 | `bookmarks` | Show and search the browser's bookmarks in the Bookmarks panel |
+| `favicon` | Load site favicons through the browser's local `_favicon` service |
 
 Study Deck does not read page history, inject scripts into websites, or send
-your study data anywhere. Dock icons use Google's public favicon service; if it
-is unreachable, the dock falls back to coloured letter tiles.
+your study data anywhere. Dock and bookmark favicons use the browser's local
+`_favicon` service first, then fall back to Google's public favicon service and
+DuckDuckGo's icon service; if all are unreachable, the dock shows a coloured
+letter tile.
+
+The extension pages also set a content security policy of
+`script-src 'self'; object-src 'self'; img-src 'self' data: https:`, so remote
+favicons are the only remote subresources loaded.
 
 ---
 

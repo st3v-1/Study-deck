@@ -462,7 +462,9 @@
     test("Floating clock/search hide on Home", async () => {
       assert(q('.widget[data-widget="clock"]').hidden, "Floating clock is visible on Home");
       assert(q('.widget[data-widget="search"]').hidden, "Floating search is visible on Home");
-      assert(!q('.widget[data-widget="actions"]'), "Quick actions widget should have been removed");
+      const actions = q('.widget[data-widget="actions"]');
+      assert(actions, "Quick actions widget is missing");
+      assert(!actions.hidden, "Quick actions should stay visible");
       return "Duplicate widgets stay out of the way";
     });
 
@@ -497,7 +499,7 @@
     });
 
     test("Rail navigation switches every section", async () => {
-      const tabs = ["todo", "tracker", "calendar", "notes", "review", "home"];
+      const tabs = ["todo", "tracker", "planner", "review", "home"];
       for (const tab of tabs) {
         click('#tabbar [data-tab="' + tab + '"]');
         await sleep(80);
@@ -624,7 +626,7 @@
       return "Split / stacked / compact and card toggles";
     });
 
-    test("Widget anchor pad offers 3 × 9 positions", async () => {
+    test("Widget anchor pad offers 4 × 9 positions", async () => {
       click("#settingsDone");
       await sleep(80);
       click('#tabbar [data-tab="todo"]');
@@ -634,7 +636,7 @@
       click('#settingsTabs [data-settings-tab="layout"]');
       await sleep(120);
       const rows = qa("#widgetPosList .widget-pos-row");
-      assert(rows.length === 3, "Expected 3 widget rows, found " + rows.length);
+      assert(rows.length === 4, "Expected 4 widget rows, found " + rows.length);
       rows.forEach((row) => {
         assert(row.querySelectorAll(".anchor-cell").length === 9, "A widget row does not have 9 anchors");
       });
@@ -646,14 +648,16 @@
       assert(rows[0].querySelector(".widget-pos-state").textContent.trim() === "Slot", "Position state did not update");
       click("#widgetReset");
       await sleep(220);
-      return "27 anchors · snap + reset present";
+      return "36 anchors · snap + reset present";
     });
 
-    test("Dragging and snapping settings are exposed", async () => {
-      assert(q('[data-setting="widgetDrag"]'), "Drag toggle is missing");
-      assert(q('[data-setting="widgetSnap"]'), "Snap toggle is missing");
-      assert(q('.widget[data-widget="clock"] .widget-grip'), "Clock grip handle is missing");
-      return "Grip, drag toggle and 12×12 snap toggle";
+    test("Drag handles and drag settings stay removed", async () => {
+      assert(q('.widget[data-widget="clock"]'), "Clock widget is missing");
+      assert(!q('.widget-grip'), "Drag handles should be removed");
+      assert(!q('[data-widget-grip]'), "No widget grips should remain");
+      assert(!q('[data-setting="widgetDrag"]'), "Drag widgets setting should be removed");
+      assert(!q('[data-setting="widgetSnap"]'), "Snap to grid setting should be removed");
+      return "Drag handles and drag settings removed";
     });
 
     test("Responsive layout keeps content inside the viewport", async () => {
@@ -702,9 +706,7 @@
         const label = el.getAttribute("aria-label") || el.getAttribute("title") || el.getAttribute("placeholder");
         assert(label && label.trim().length > 2, "Control has no accessible name: " + sel);
       });
-      qa(".widget-grip").forEach((grip) => {
-        assert(grip.getAttribute("aria-label") || grip.title, "Widget grip has no label");
-      });
+      assert(!q('.widget-grip'), "No drag handles should remain");
       return ids.length + " IDs · no duplicates";
     });
 

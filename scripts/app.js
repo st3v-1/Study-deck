@@ -38,6 +38,7 @@
     glassGlow: true,
     wallpaperImage: "",
     wallpaperBgBlur: 0,
+    wallpaperPalette: [],
     homeName: "",
     homeLayout: "split",
     hideWidgetsOnHome: true,
@@ -281,6 +282,7 @@
     if (!["gradient", "soft", "plain", "image"].includes(s.background)) s.background = "gradient";
     if (typeof s.wallpaperImage !== "string") s.wallpaperImage = "";
     s.wallpaperBgBlur = clamp(Number(s.wallpaperBgBlur) || 0, 0, 40);
+    s.wallpaperPalette = Array.isArray(s.wallpaperPalette) ? s.wallpaperPalette.filter((c) => typeof c === "string") : [];
     if (!ENGINES[s.engine]) s.engine = "google";
     s.dockSize = clamp(Number(s.dockSize) || 58, 44, 76);
     if (!CLOCK_STYLES[s.clockStyle]) s.clockStyle = "digital";
@@ -516,6 +518,70 @@
   function applyWallpaperBgBlur() {
     const v = Number.isFinite(Number(settings.wallpaperBgBlur)) ? Number(settings.wallpaperBgBlur) : 0;
     rootEl.style.setProperty("--wallpaper-bg-blur", Math.max(0, Math.min(40, Math.round(v))).toFixed(0) + "px");
+  }
+
+  /* Extract up to `count` quantised colours from a wallpaper image. */
+  function extractWallpaperPalette(dataUrl, count) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const c = document.createElement("canvas");
+          c.width = 64;
+          c.height = 64;
+          const ctx = c.getContext("2d");
+          ctx.drawImage(img, 0, 0, 64, 64);
+          const d = ctx.getImageData(0, 0, 64, 64).data;
+          const buckets = new Map();
+          for (let i = 0; i < d.length; i += 4) {
+            const r = (d[i] >> 4) * 16;
+            const g = (d[i + 1] >> 4) * 16;
+            const b = (d[i + 2] >> 4) * 16;
+            const key = (r << 16) | (g << 8) | b;
+            if (!buckets.has(key)) buckets.set(key, { r, g, b, n: 0 });
+            buckets.get(key).n += 1;
+          }
+          const top = Array.from(buckets.values()).sort((a, b2) => b2.n - a.n).slice(0, count || 4);
+          const palette = top.map((b) => "#" + [b.r, b.g, b.b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("").toUpperCase());
+          resolve(palette);
+        } catch (e) {
+          resolve([]);
+        }
+      };
+      img.onerror = () => resolve([]);
+      img.src = dataUrl;
+    });
+  }
+
+  function renderWallpaperPalette() {
+    const host = $("#wallpaperPalette");
+    if (!host) return;
+    host.innerHTML = "";
+    const palette = Array.isArray(settings.wallpaperPalette) ? settings.wallpaperPalette : [];
+    if (!palette.length) {
+      host.hidden = true;
+      return;
+    }
+    host.hidden = false;
+    palette.forEach((hex) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "wallpaper-palette-swatch";
+      b.style.background = hex;
+      b.dataset.paletteHex = hex;
+      b.addEventListener("click", () => {
+        settings.accent = "custom";
+        settings.customAccent = hex;
+        applySettings();
+        saveSettings();
+        persistBootTheme();
+      });
+      const label = document.createElement("span");
+      label.className = "wallpaper-palette-hex";
+      label.textContent = hex;
+      b.appendChild(label);
+      host.appendChild(b);
+    });
   }
 
   function applyTheme() {
@@ -3050,8 +3116,10 @@
         const reader = new FileReader();
         reader.onload = () => {
           settings.wallpaperImage = String(reader.result || "");
-          wallpaperAccentFromImage(settings.wallpaperImage).then((accentKey) => {
+          wallpaperAccentFromImage(settings.wallpaperImage).then(async (accentKey) => {
             if (accentKey && ACCENTS[accentKey]) settings.accent = accentKey;
+            settings.wallpaperPalette = await extractWallpaperPalette(settings.wallpaperImage, 4);
+            renderWallpaperPalette();
             applySettings();
             saveSettings();
             persistBootTheme();

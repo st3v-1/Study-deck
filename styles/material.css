@@ -537,11 +537,12 @@ html[data-bg="image"] .ambient .wallpaper-layer {
   border: 1px solid var(--md-outline-variant);
   border-radius: var(--radius-md);
   background: var(--md-surface-container-low);
-  transition: border-color var(--state-transition), opacity var(--state-transition);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--md-on-surface) 4%, transparent);
+  transition: border-color var(--state-transition), background var(--state-transition), opacity var(--state-transition);
 }
-.home-task-item:hover { border-color: var(--md-outline); }
-.home-task-item.done { opacity: 0.55; }
-.home-task-item.done .home-task-text { text-decoration: line-through; }
+.home-task-item:hover { border-color: var(--md-outline); background: var(--md-surface-container); }
+.home-task-item.done { opacity: 0.75; border-color: var(--md-outline-variant); }
+.home-task-item.done .home-task-text { color: var(--md-on-surface-variant); text-decoration: line-through; }
 .home-task-item.done .check { background: var(--action); border-color: var(--action); color: var(--on-action); }
 .home-task-text { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.45; overflow-wrap: anywhere; }
 .home-task-time {
@@ -1177,12 +1178,13 @@ ul.todo-list { display: flex; flex-direction: column; gap: 8px; margin: 0; paddi
   padding: 10px 12px 10px 14px;
   border: 1px solid var(--md-outline-variant);
   border-radius: var(--radius-md);
-  background: var(--md-surface-container-lowest);
+  background: var(--md-surface-container-low);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--md-on-surface) 4%, transparent);
   transition: border-color var(--state-transition), background var(--state-transition), opacity var(--state-transition);
 }
-.todo-item:hover { border-color: var(--md-outline); }
-.todo-item.done { opacity: 0.55; }
-.todo-item.done .todo-text { text-decoration: line-through; }
+.todo-item:hover { border-color: var(--md-outline); background: var(--md-surface-container); }
+.todo-item.done { opacity: 0.75; border-color: var(--md-outline-variant); }
+.todo-item.done .todo-text { color: var(--md-on-surface-variant); text-decoration: line-through; }
 .todo-item.overdue { border-color: var(--md-error); }
 .check {
   position: relative;
@@ -1311,7 +1313,7 @@ ul.todo-list { display: flex; flex-direction: column; gap: 8px; margin: 0; paddi
   isolation: isolate;
   border: 1px solid var(--md-outline-variant);
   border-radius: var(--radius-md);
-  background: var(--md-surface-container-lowest);
+  background: var(--md-surface-container);
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--md-on-surface) 5%, transparent);
   overflow: hidden;
 }
@@ -1319,7 +1321,7 @@ ul.todo-list { display: flex; flex-direction: column; gap: 8px; margin: 0; paddi
   overflow: auto;
   max-height: calc(100vh - 380px);
   min-height: 220px;
-  background: var(--md-surface-container-lowest);
+  background: var(--md-surface-container);
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--action) 60%, transparent) transparent;
   overscroll-behavior: contain;
@@ -1341,8 +1343,8 @@ ul.todo-list { display: flex; flex-direction: column; gap: 8px; margin: 0; paddi
   width: 72px;
   background: linear-gradient(90deg,
     transparent,
-    color-mix(in srgb, var(--md-surface-container-lowest) 72%, transparent) 55%,
-    var(--md-surface-container-lowest));
+    color-mix(in srgb, var(--md-surface-container) 72%, transparent) 55%,
+    var(--md-surface-container));
   pointer-events: none;
   opacity: 1;
   transition: opacity var(--state-transition);
@@ -1387,13 +1389,13 @@ table.sheet th {
 table.sheet td {
   padding: 7px 7px;
   border-bottom: 1px solid var(--md-outline-variant);
-  background: var(--md-surface-container-lowest);
+  background: var(--md-surface-container-low);
   text-align: center;
   white-space: nowrap;
 }
 table.sheet tr:last-child td { border-bottom: none; }
-table.sheet tbody tr:nth-child(even) td { background: var(--md-surface-container-low); }
-table.sheet tbody tr:hover td { background: var(--md-surface-container); }
+table.sheet tbody tr:nth-child(even) td { background: var(--md-surface-container-high); }
+table.sheet tbody tr:hover td { background: var(--md-surface-container-highest); }
 table.sheet td.sno {
   color: var(--md-on-surface-variant);
   font-family: var(--font-mono);

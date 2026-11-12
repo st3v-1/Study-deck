@@ -195,6 +195,33 @@ def static_checks():
     add("P. MYNT theme", "P6 Custom palette", "PASS" if custom else "FAIL",
         "colour picker generates a full tonal ramp")
 
+    # Design-system hardening (contrast roles, tokens, type, status)
+    roles = all(t in css for t in ("--action:", "--on-action:", "--link:", "--focus-ring:"))
+    roles_js = all(t in js for t in ('set("--action"', 'set("--on-action"', 'set("--link"', 'set("--focus-ring"'))
+    add("P. MYNT theme", "P7 Action/link split", "PASS" if roles and roles_js else "FAIL",
+        "fills, labels and text links use separate WCAG-checked roles")
+    radius_tokens = all(t in css for t in ("--radius-xs:", "--radius-sm:", "--radius-md:", "--radius-lg:", "--radius-xl:", "--radius-pill:"))
+    space_tokens = all("--space-%d:" % i in css for i in range(1, 9))
+    raw_radii = re.findall(r"border-radius:\s*\d+px", css)
+    add("P. MYNT theme", "P8 Token scale", "PASS" if radius_tokens and space_tokens and not raw_radii else "FAIL",
+        "five radii + pill, 4px spacing steps, no raw radius values" if not raw_radii else "raw radii: %s" % raw_radii)
+    status = all(t in css for t in ("--ok:", "--warn:", "--info:", "--on-ok:", "--on-warn:", "--on-info:"))
+    add("P. MYNT theme", "P9 Status tokens", "PASS" if status else "FAIL",
+        "success, warning and info roles with readable labels")
+    small_type = re.findall(r"font-size:\s*11(?:\.5)?px", css)
+    add("P. MYNT theme", "P10 Type floor", "PASS" if not small_type else "FAIL",
+        "no 11px/11.5px body copy" if not small_type else "%d declarations below 12px" % len(small_type))
+    weights = all(w in css for w in ("Poppins-Medium.ttf", "Poppins-SemiBold.ttf", "Poppins-Bold.ttf"))
+    weight_files = all((ROOT / "fonts" / f).exists() for f in ("Poppins-Medium.ttf", "Poppins-SemiBold.ttf", "Poppins-Bold.ttf"))
+    add("P. MYNT theme", "P11 Real font weights", "PASS" if weights and weight_files else "FAIL",
+        "Poppins 500/600/700 bundled, no faux bold")
+    focus_used = len(re.findall(r"var\(--focus-ring\)", css)) >= 5
+    add("P. MYNT theme", "P12 Focus token", "PASS" if focus_used else "FAIL",
+        "focus rings route through --focus-ring")
+    tracker_frame = all(t in css for t in (".sheet-frame", ".sheet-fade", ".sheet-frame.at-end")) and "updateSheetScrollState" in js
+    add("O. Tracker & review", "O7 Tracker scroll affordance", "PASS" if tracker_frame else "FAIL",
+        "sticky identity columns, edge fade and hint retire at the last column")
+
     # Manifests + ZIPs + dist sync
     for manifest in ("dist/chrome/manifest.json", "dist/firefox/manifest.json"):
         try:

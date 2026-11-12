@@ -263,11 +263,15 @@
               <svg class="icon"><use href="#i-plus"></use></svg> Add row
             </button>
           </div>
-          <div class="sheet-scroll">
-            <table class="sheet">
-              <thead id="sheetHead"></thead>
-              <tbody id="sheetBody"></tbody>
-            </table>
+          <div class="sheet-frame" id="sheetFrame">
+            <div class="sheet-scroll" id="sheetScroll">
+              <table class="sheet">
+                <thead id="sheetHead"></thead>
+                <tbody id="sheetBody"></tbody>
+              </table>
+            </div>
+            <div class="sheet-fade" aria-hidden="true"></div>
+            <span class="sheet-hint" id="sheetHint" aria-hidden="true">Scroll&#8202;→</span>
           </div>
           <div id="sheetEmpty" class="empty-state" hidden>No tests logged in this sheet yet — click “Add row” to start.</div>
           <div class="trend-wrap">

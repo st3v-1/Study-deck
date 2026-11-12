@@ -1,8 +1,8 @@
 # UI audit report
 
-Generated: 2026-11-12 11:17
+Generated: 2026-11-12 12:07
 
-**Checks:** 52 · PASS 52 · FAIL 0 · WARN 0 · SKIP 0
+**Checks:** 59 · PASS 59 · FAIL 0 · WARN 0 · SKIP 0
 
 | Section | ID | Result | Detail |
 | --- | --- | --- | --- |
@@ -15,7 +15,7 @@ Generated: 2026-11-12 11:17
 | L. Accessibility | L1 Control names | PASS | all buttons named |
 | L. Accessibility | L3 h1 per panel | PASS | all panels have h1 |
 | J. Settings | J3/J4 No dead drag UI | PASS | clean |
-| A. App shell | A6 CSS balance | PASS | braces 731 / 731 |
+| A. App shell | A6 CSS balance | PASS | braces 751 / 751 |
 | A. App shell | A7 JS balance | PASS | balanced |
 | H. Google apps popup | H1 Anchored popup | PASS | anchored to #appsBtn with a transparent backdrop |
 | D. Home dashboard | D6 Overdue tag | PASS | visible Overdue tag next to late tasks |
@@ -33,6 +33,13 @@ Generated: 2026-11-12 11:17
 | P. MYNT theme | P4 Motion tokens | PASS | Material easing tokens and dock hover lift |
 | P. MYNT theme | P5 Rounded icon set | PASS | stroke-based rounded sprite with tinted tiles |
 | P. MYNT theme | P6 Custom palette | PASS | colour picker generates a full tonal ramp |
+| P. MYNT theme | P7 Action/link split | PASS | fills, labels and text links use separate WCAG-checked roles |
+| P. MYNT theme | P8 Token scale | PASS | five radii + pill, 4px spacing steps, no raw radius values |
+| P. MYNT theme | P9 Status tokens | PASS | success, warning and info roles with readable labels |
+| P. MYNT theme | P10 Type floor | PASS | no 11px/11.5px body copy |
+| P. MYNT theme | P11 Real font weights | PASS | Poppins 500/600/700 bundled, no faux bold |
+| P. MYNT theme | P12 Focus token | PASS | focus rings route through --focus-ring |
+| O. Tracker & review | O7 Tracker scroll affordance | PASS | sticky identity columns, edge fade and hint retire at the last column |
 | N. Data & sync | N0 Manifest chrome | PASS | valid JSON |
 | N. Data & sync | N0 Manifest firefox | PASS | valid JSON |
 | N. Data & sync | N0 ZIP study-deck-chrome.zip | PASS | integrity ok |

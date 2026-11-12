@@ -72,19 +72,19 @@
     };
   }
 
-  /* MYNT-style tonal palettes: six roles per colour. */
+  /* MYNT-style tonal palettes: six roles per colour plus derived link/on. */
   const ACCENTS = {
-    blue: { name: "Blue", swatch: "#4382EC", bg: "#BBD6FD", tint: "#E2EEFF", dark: "#4382EC", darker: "#3569B2", text: "#1B3041", on: "#FFFFFF" },
-    red: { name: "Red", swatch: "#EC4343", bg: "#FDBDBD", tint: "#FFE7E7", dark: "#EC4343", darker: "#B23535", text: "#411B1B", on: "#FFFFFF" },
-    yellow: { name: "Yellow", swatch: "#D1A93D", bg: "#FFED80", tint: "#FFF6C3", dark: "#D1A93D", darker: "#AE9502", text: "#2F2707", on: "#FFFFFF" },
-    green: { name: "Green", swatch: "#5CBA5C", bg: "#C7E4C7", tint: "#E1F1E1", dark: "#5CBA5C", darker: "#458245", text: "#1B411B", on: "#FFFFFF" },
-    cyan: { name: "Cyan", swatch: "#09B2B4", bg: "#9CEFEF", tint: "#D5FFFF", dark: "#09B2B4", darker: "#07787F", text: "#08354B", on: "#FFFFFF" },
-    pink: { name: "Pink", swatch: "#EC5E78", bg: "#F9C8D6", tint: "#FFEBF2", dark: "#EC5E78", darker: "#B24B64", text: "#411B28", on: "#FFFFFF" },
-    orange: { name: "Orange", swatch: "#EC844D", bg: "#FFD8B2", tint: "#FFEDD5", dark: "#EC844D", darker: "#B26D3E", text: "#412B1E", on: "#FFFFFF" },
-    purple: { name: "Purple", swatch: "#9563B5", bg: "#DAC2E8", tint: "#E9E2F3", dark: "#9563B5", darker: "#724B8F", text: "#2D1B3E", on: "#FFFFFF" },
-    silver: { name: "Silver", swatch: "#9E9E9E", bg: "#C6C6C6", tint: "#E5E5E5", dark: "#9E9E9E", darker: "#6F6F6F", text: "#333333", on: "#FFFFFF" },
-    brown: { name: "Brown", swatch: "#705347", bg: "#DFC28D", tint: "#EAE3C9", dark: "#705347", darker: "#4E3930", text: "#16100D", on: "#FFFFFF" },
-    peach: { name: "Peach", swatch: "#E8705C", bg: "#FFCCBF", tint: "#FDF1EF", dark: "#E8705C", darker: "#B24E3E", text: "#441730", on: "#FFFFFF", custom: true }
+    blue: { name: "Blue", swatch: "#4382EC", bg: "#BBD6FD", tint: "#E2EEFF", dark: "#4382EC", darker: "#3569B2", text: "#1B3041", link: "#294F7F" },
+    red: { name: "Red", swatch: "#EC4343", bg: "#FDBDBD", tint: "#FFE7E7", dark: "#EC4343", darker: "#B23535", text: "#411B1B", link: "#7F2929" },
+    yellow: { name: "Yellow", swatch: "#D1A93D", bg: "#FFED80", tint: "#FFF6C3", dark: "#D1A93D", darker: "#AE9502", text: "#2F2707", link: "#756404" },
+    green: { name: "Green", swatch: "#5CBA5C", bg: "#C7E4C7", tint: "#E1F1E1", dark: "#5CBA5C", darker: "#458245", text: "#1B411B", link: "#326532" },
+    cyan: { name: "Cyan", swatch: "#09B2B4", bg: "#9CEFEF", tint: "#D5FFFF", dark: "#09B2B4", darker: "#07787F", text: "#08354B", link: "#075A68" },
+    pink: { name: "Pink", swatch: "#EC5E78", bg: "#F9C8D6", tint: "#FFEBF2", dark: "#EC5E78", darker: "#B24B64", text: "#411B28", link: "#7F3549" },
+    orange: { name: "Orange", swatch: "#EC844D", bg: "#FFD8B2", tint: "#FFEDD5", dark: "#EC844D", darker: "#A65E2E", text: "#412B1E", link: "#794727" },
+    purple: { name: "Purple", swatch: "#9563B5", bg: "#DAC2E8", tint: "#E9E2F3", dark: "#9563B5", darker: "#724B8F", text: "#2D1B3E", link: "#53356B" },
+    silver: { name: "Silver", swatch: "#9E9E9E", bg: "#C6C6C6", tint: "#E5E5E5", dark: "#9E9E9E", darker: "#6F6F6F", text: "#333333", link: "#4F4F4F" },
+    brown: { name: "Brown", swatch: "#705347", bg: "#DFC28D", tint: "#EAE3C9", dark: "#705347", darker: "#4E3930", text: "#16100D", link: "#352720" },
+    peach: { name: "Peach", swatch: "#E8705C", bg: "#FFCCBF", tint: "#FDF1EF", dark: "#E8705C", darker: "#B24E3E", text: "#441730", link: "#803538" }
   };
 
   const ENGINES = {
@@ -324,25 +324,51 @@
     return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
   }
 
+  function relLuminance(hex) {
+    const c = hexRgb(hex).map((v) => {
+      const s = v / 255;
+      return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+
+  function contrastRatio(a, b) {
+    const l1 = relLuminance(a);
+    const l2 = relLuminance(b);
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  }
+
+  /* Pick the label colour that keeps an accent fill at WCAG AA. */
+  function onColor(fill, ink) {
+    if (contrastRatio(fill, ink) >= 4.5) return ink;
+    if (contrastRatio(fill, "#FFFFFF") >= 4.5) return "#FFFFFF";
+    return contrastRatio(fill, "#FFFFFF") >= contrastRatio(fill, ink) ? "#FFFFFF" : ink;
+  }
+
   function paletteFromHex(hex) {
     const base = /^#[0-9a-f]{6}$/i.test(hex || "") ? hex : "#696969";
+    const fill = mixHex(base, "#000000", 0.30);
+    const text = mixHex(base, "#000000", 0.85);
     return {
       name: "Custom",
       swatch: base,
       bg: mixHex(base, "#FFFFFF", 0.70),
       tint: mixHex(base, "#FFFFFF", 0.90),
       dark: base,
-      darker: mixHex(base, "#000000", 0.30),
-      text: mixHex(base, "#000000", 0.80),
-      on: "#FFFFFF"
+      darker: fill,
+      text,
+      link: mixHex(fill, text, 0.45)
     };
   }
 
   function activePalette() {
-    if (settings.accent === "custom" && settings.customAccent) {
-      return paletteFromHex(settings.customAccent);
-    }
-    return ACCENTS[settings.accent] || ACCENTS.blue;
+    const p = settings.accent === "custom" && settings.customAccent
+      ? paletteFromHex(settings.customAccent)
+      : (ACCENTS[settings.accent] || ACCENTS.blue);
+    return Object.assign({}, p, {
+      link: p.link || mixHex(p.darker, p.text, 0.45),
+      on: onColor(p.darker, p.text)
+    });
   }
 
   function applyAccentTokens() {
@@ -350,16 +376,27 @@
     const dark = rootEl.getAttribute("data-theme") === "dark";
     const set = (name, value) => rootEl.style.setProperty(name, value);
 
-    set("--mynt-bg", dark ? "#171615" : p.bg);
-    set("--mynt-tint", dark ? mixHex("#2B2724", p.dark, 0.20) : p.tint);
-    set("--mynt-dark", dark ? mixHex(p.dark, "#FFFFFF", 0.30) : p.dark);
-    set("--mynt-darker", dark ? mixHex(p.dark, "#FFFFFF", 0.45) : p.darker);
-    set("--mynt-text", dark ? "#ECE5E0" : p.text);
-    set("--mynt-on", dark ? "#1B1918" : p.on);
-
+    /* Semantic roles: fill + label stay separate from text/link colours so
+       every palette can pass WCAG AA in both modes. */
     if (dark) {
-      set("--md-primary", mixHex(p.dark, "#FFFFFF", 0.34));
-      set("--md-on-primary", "#221C28");
+      const surface = mixHex("#141312", p.dark, 0.05);
+      const lowest = mixHex("#0E0D0C", p.dark, 0.04);
+      const tint = mixHex("#2B2724", p.dark, 0.20);
+      const link = mixHex(p.dark, "#FFFFFF", 0.55);
+
+      set("--mynt-bg", surface);
+      set("--mynt-tint", tint);
+      set("--mynt-dark", mixHex(p.dark, "#FFFFFF", 0.30));
+      set("--mynt-darker", mixHex(p.dark, "#FFFFFF", 0.45));
+      set("--mynt-text", "#ECE5E0");
+      set("--mynt-on", "#1B1918");
+      set("--action", mixHex(p.dark, "#FFFFFF", 0.45));
+      set("--on-action", "#1B1918");
+      set("--link", link);
+      set("--focus-ring", link);
+
+      set("--md-primary", link);
+      set("--md-on-primary", "#1B1918");
       set("--md-primary-container", mixHex(p.dark, "#1B1918", 0.72));
       set("--md-on-primary-container", mixHex(p.dark, "#FFFFFF", 0.84));
       set("--md-secondary", mixHex(p.dark, "#FFFFFF", 0.55));
@@ -368,13 +405,13 @@
       set("--md-tertiary", mixHex(p.bg, "#FFFFFF", 0.62));
       set("--md-tertiary-container", mixHex(p.bg, "#1B1918", 0.74));
       set("--md-on-tertiary-container", mixHex(p.bg, "#FFFFFF", 0.86));
-      set("--md-surface", "#141312");
-      set("--md-surface-dim", "#0E0D0C");
-      set("--md-surface-container-lowest", "#0E0D0C");
-      set("--md-surface-container-low", "#1B1918");
-      set("--md-surface-container", "#201D1B");
-      set("--md-surface-container-high", "#282422");
-      set("--md-surface-container-highest", "#322D2A");
+      set("--md-surface", surface);
+      set("--md-surface-dim", lowest);
+      set("--md-surface-container-lowest", lowest);
+      set("--md-surface-container-low", mixHex("#1B1918", p.dark, 0.06));
+      set("--md-surface-container", mixHex("#201D1B", p.dark, 0.07));
+      set("--md-surface-container-high", mixHex("#282422", p.dark, 0.08));
+      set("--md-surface-container-highest", mixHex("#322D2A", p.dark, 0.09));
       set("--md-on-surface", "#ECE5E0");
       set("--md-on-surface-variant", "#CFC5BE");
       set("--md-outline", "#978E88");
@@ -383,11 +420,22 @@
       set("--md-inverse-on-surface", "#2A2725");
       set("--md-scrim", "rgba(0, 0, 0, 0.55)");
     } else {
-      set("--md-primary", p.darker);
+      set("--mynt-bg", p.bg);
+      set("--mynt-tint", p.tint);
+      set("--mynt-dark", p.dark);
+      set("--mynt-darker", p.darker);
+      set("--mynt-text", p.text);
+      set("--mynt-on", p.on);
+      set("--action", p.darker);
+      set("--on-action", p.on);
+      set("--link", p.link);
+      set("--focus-ring", p.link);
+
+      set("--md-primary", p.link);
       set("--md-on-primary", "#FFFFFF");
       set("--md-primary-container", p.tint);
       set("--md-on-primary-container", p.text);
-      set("--md-secondary", p.darker);
+      set("--md-secondary", p.link);
       set("--md-secondary-container", p.tint);
       set("--md-on-secondary-container", p.text);
       set("--md-tertiary", mixHex(p.dark, p.text, 0.30));
@@ -1085,6 +1133,24 @@
       el.style.setProperty("--lift", "0px");
       el.style.setProperty("--inv", "1");
     });
+  }
+
+  /* The floating dock retires while the page scrolls down so it never sits
+     on top of a table header or the last row of a card; any upward scroll
+     or a hover/tap brings it straight back. */
+  function setupDockAutoHide() {
+    const wrap = document.querySelector(".dock-wrap");
+    if (!wrap) return;
+    let lastY = window.scrollY;
+    window.addEventListener("scroll", () => {
+      const y = window.scrollY;
+      const down = y > lastY + 6;
+      const nearBottom = window.innerHeight + y >= document.documentElement.scrollHeight - 96;
+      if (down && y > 140 && !nearBottom) wrap.classList.add("is-hidden");
+      else if (!down || nearBottom) wrap.classList.remove("is-hidden");
+      lastY = y;
+    }, { passive: true });
+    wrap.addEventListener("pointerenter", () => wrap.classList.remove("is-hidden"));
   }
 
   function setupDockMagnify() {
@@ -2156,9 +2222,27 @@
     mockData = await store.load("mocktests-data", {});
     if (!mockData || typeof mockData !== "object") mockData = {};
     CATEGORIES.forEach((c) => { if (!Array.isArray(mockData[c])) mockData[c] = []; });
+    const scroller = $("#sheetScroll");
+    if (scroller && !scroller.dataset.bound) {
+      scroller.dataset.bound = "1";
+      scroller.addEventListener("scroll", updateSheetScrollState, { passive: true });
+      window.addEventListener("resize", updateSheetScrollState);
+    }
     renderSheetTabs();
     renderSheetHead();
     renderSheet();
+  }
+
+  /* The wide sheet shows a fade + "Scroll →" hint until the last column is
+     reached, then both retire so they never cover the final inputs. */
+  function updateSheetScrollState() {
+    requestAnimationFrame(() => {
+      const frame = $("#sheetFrame");
+      const scroller = $("#sheetScroll");
+      if (!frame || !scroller) return;
+      const max = scroller.scrollWidth - scroller.clientWidth;
+      frame.classList.toggle("at-end", max <= 4 || scroller.scrollLeft >= max - 4);
+    });
   }
 
   function renderSheetTabs() {
@@ -2171,6 +2255,8 @@
       b.textContent = cat;
       b.addEventListener("click", () => {
         activeCategory = cat;
+        const scroller = $("#sheetScroll");
+        if (scroller) scroller.scrollLeft = 0;
         renderSheetTabs();
         renderSheetHead();
         renderSheet();
@@ -2318,6 +2404,8 @@
     const tbody = $("#sheetBody");
     tbody.innerHTML = "";
     $("#sheetEmpty").hidden = rows.length > 0;
+    const frame = $("#sheetFrame");
+    if (frame) frame.classList.toggle("is-empty", rows.length === 0);
 
     rows.forEach((r, idx) => {
       let sectionCells = "";
@@ -2385,6 +2473,7 @@
     });
 
     updateSummaryAndTrend(rows, sections);
+    updateSheetScrollState();
   }
 
   function updateSummaryAndTrend(rows, sections) {
@@ -3248,6 +3337,7 @@
       if (widgetLayer) widgetLayer.classList.remove("no-anim");
     });
     setupDockMagnify();
+    setupDockAutoHide();
 
     const dateInput = $("#todoDate");
     if (dateInput) dateInput.value = todayStr();

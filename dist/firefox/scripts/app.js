@@ -36,8 +36,6 @@
     surfaceStyle: "glass",
     glassStrength: 62,
     glassGlow: true,
-    wallpaperBlur: 30,
-    wallpaperBgBlur: 0,
     wallpaperImage: "",
     homeName: "",
     homeLayout: "split",
@@ -88,16 +86,6 @@
     silver: { name: "Silver", swatch: "#9E9E9E", bg: "#C6C6C6", tint: "#E5E5E5", dark: "#9E9E9E", darker: "#6F6F6F", text: "#333333", link: "#4F4F4F" },
     brown: { name: "Brown", swatch: "#705347", bg: "#DFC28D", tint: "#EAE3C9", dark: "#705347", darker: "#4E3930", text: "#16100D", link: "#352720" },
     peach: { name: "Peach", swatch: "#E8705C", bg: "#FFCCBF", tint: "#FDF1EF", dark: "#E8705C", darker: "#B24E3E", text: "#441730", link: "#803538" }
-  };
-
-  /* Aesthetic wallpapers: each one carries an accent mood so picking a
-     wallpaper re-tunes the whole deck (background, surfaces, clock, icons). */
-  const WALLPAPERS = {
-    aurora: { name: "Aurora", accent: "cyan" },
-    sunset: { name: "Sunset", accent: "orange" },
-    ocean: { name: "Ocean", accent: "blue" },
-    forest: { name: "Forest", accent: "green" },
-    dusk: { name: "Dusk", accent: "purple" }
   };
 
   const ENGINES = {
@@ -289,9 +277,7 @@
     if (typeof s.customAccent !== "string" || !/^#[0-9a-f]{6}$/i.test(s.customAccent)) s.customAccent = "";
     if (s.accent === "custom" && !s.customAccent) s.accent = "blue";
     if (s.accent !== "custom" && !ACCENTS[s.accent]) s.accent = "blue";
-    if (!["gradient", "soft", "plain"].includes(s.background) && !WALLPAPERS[s.background]) s.background = "gradient";
-    s.wallpaperBlur = clamp(Number(s.wallpaperBlur) || 30, 0, 60);
-    s.wallpaperBgBlur = clamp(Number(s.wallpaperBgBlur) || 0, 0, 40);
+    if (!["gradient", "soft", "plain", "image"].includes(s.background)) s.background = "gradient";
     if (typeof s.wallpaperImage !== "string") s.wallpaperImage = "";
     if (!ENGINES[s.engine]) s.engine = "google";
     s.dockSize = clamp(Number(s.dockSize) || 58, 44, 76);
@@ -475,6 +461,56 @@
     rootEl.setAttribute("data-accent", settings.accent);
   }
 
+  /* Derive the deck accent from a wallpaper image (average dominant colour,
+     snapped to the nearest tonal accent). */
+  function wallpaperAccentFromImage(dataUrl) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const c = document.createElement("canvas");
+          c.width = 48;
+          c.height = 48;
+          const ctx = c.getContext("2d");
+          ctx.drawImage(img, 0, 0, 48, 48);
+          const d = ctx.getImageData(0, 0, 48, 48).data;
+          let r = 0;
+          let g = 0;
+          let b = 0;
+          let n = 0;
+          for (let i = 0; i < d.length; i += 4) {
+            r += d[i];
+            g += d[i + 1];
+            b += d[i + 2];
+            n++;
+          }
+          r /= n;
+          g /= n;
+          b /= n;
+          const hex = "#" + [r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("").toUpperCase();
+          let bestKey = "blue";
+          let bestDist = Infinity;
+          Object.keys(ACCENTS).forEach((k) => {
+            const p = ACCENTS[k];
+            const dr = r - parseInt(p.swatch.slice(1), 16);
+            const dg = g - parseInt(p.swatch.slice(3, 5), 16);
+            const db = b - parseInt(p.swatch.slice(5, 7), 16);
+            const dist = dr * dr + dg * dg + db * db;
+            if (dist < bestDist) {
+              bestDist = dist;
+              bestKey = k;
+            }
+          });
+          resolve(bestKey);
+        } catch (e) {
+          resolve(null);
+        }
+      };
+      img.onerror = () => resolve(null);
+      img.src = dataUrl;
+    });
+  }
+
   function applyTheme() {
     rootEl.setAttribute("data-theme", resolvedTheme());
     applyAccentTokens();
@@ -541,17 +577,6 @@
     rootEl.style.setProperty("--glass-sat", sat.toFixed(0) + "%");
   }
 
-  /* Soft-glow blur for wallpapers: smaller value = softer, more diffuse glow. */
-  function applyWallpaperBlur() {
-    const v = Number.isFinite(Number(settings.wallpaperBlur)) ? Number(settings.wallpaperBlur) : 30;
-    rootEl.style.setProperty("--orb-blur", Math.max(0, Math.min(60, Math.round(v))).toFixed(0) + "px");
-  }
-
-  function applyWallpaperBgBlur() {
-    const v = Number.isFinite(Number(settings.wallpaperBgBlur)) ? Number(settings.wallpaperBgBlur) : 0;
-    rootEl.style.setProperty("--wallpaper-bg-blur", Math.max(0, Math.min(40, Math.round(v))).toFixed(0) + "px");
-  }
-
   const GOOGLE_LOGO_SVG =
     '<svg viewBox="0 0 48 48" aria-hidden="true">' +
       '<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>' +
@@ -595,8 +620,6 @@
     }
 
     applySurfaceStyle();
-    applyWallpaperBlur();
-    applyWallpaperBgBlur();
     applySearchEngineBranding();
     applyWidgetVisibility();
     if ($("#dock")) $("#dock").classList.toggle("no-magnify", !settings.dockMagnify);
@@ -620,7 +643,6 @@
 
     $$("#themeSeg [data-theme-choice]").forEach((b) => b.classList.toggle("active", b.dataset.themeChoice === settings.theme));
     $$("#bgSeg [data-bg-choice]").forEach((b) => b.classList.toggle("active", b.dataset.bgChoice === settings.background));
-    $$("#wallpaperSeg [data-wallpaper-choice]").forEach((b) => b.classList.toggle("active", b.dataset.wallpaperChoice === settings.background));
     $$("#surfaceSeg [data-surface-choice]").forEach((b) => b.classList.toggle("active", b.dataset.surfaceChoice === settings.surfaceStyle));
     $$("#homeLayoutSeg [data-home-layout]").forEach((b) => b.classList.toggle("active", b.dataset.homeLayout === settings.homeLayout));
     $$(".swatch").forEach((b) => b.classList.toggle("active", b.dataset.accent === settings.accent));
@@ -3020,10 +3042,13 @@
         const reader = new FileReader();
         reader.onload = () => {
           settings.wallpaperImage = String(reader.result || "");
-          applySettings();
-          saveSettings();
-          persistBootTheme();
-          if (wallpaperName) wallpaperName.textContent = file.name;
+          wallpaperAccentFromImage(settings.wallpaperImage).then((accentKey) => {
+            if (accentKey && ACCENTS[accentKey]) settings.accent = accentKey;
+            applySettings();
+            saveSettings();
+            persistBootTheme();
+            if (wallpaperName) wallpaperName.textContent = file.name;
+          });
         };
         reader.readAsDataURL(file);
       });
@@ -3050,10 +3075,6 @@
             renderDock();
           } else if (key === "glassStrength") {
             applySurfaceStyle();
-          } else if (key === "wallpaperBlur") {
-            applyWallpaperBlur();
-          } else if (key === "wallpaperBgBlur") {
-            applyWallpaperBgBlur();
           }
           persistBootTheme();
         });
@@ -3098,16 +3119,6 @@
     $$("#bgSeg [data-bg-choice]").forEach((b) => {
       b.addEventListener("click", () => {
         settings.background = b.dataset.bgChoice;
-        applySettings();
-        saveSettings();
-      });
-    });
-    $$("#wallpaperSeg [data-wallpaper-choice]").forEach((b) => {
-      b.addEventListener("click", () => {
-        const choice = b.dataset.wallpaperChoice;
-        const wp = WALLPAPERS[choice];
-        settings.background = choice;
-        if (wp && ACCENTS[wp.accent]) settings.accent = wp.accent;
         applySettings();
         saveSettings();
       });

@@ -535,28 +535,13 @@
         <div class="setting-group">
           <h3>Wallpaper</h3>
           <p class="setting-desc">Pick an aesthetic wallpaper. Its mood tunes the deck’s accent colour.</p>
-          <div class="seg" id="wallpaperSeg">
-            <button type="button" data-wallpaper-choice="aurora">Aurora</button>
-            <button type="button" data-wallpaper-choice="sunset">Sunset</button>
-            <button type="button" data-wallpaper-choice="ocean">Ocean</button>
-            <button type="button" data-wallpaper-choice="forest">Forest</button>
-            <button type="button" data-wallpaper-choice="dusk">Dusk</button>
-          </div>
           <div class="setting-row">
-            <span class="setting-copy"><span class="setting-title">Soft glow blur</span><span class="setting-desc">Strength of the ambient glow behind panels, in pixels.</span></span>
-            <input type="range" min="0" max="60" step="2" data-setting="wallpaperBlur" class="range" aria-label="Wallpaper soft glow blur">
-          </div>
-          <div class="setting-row">
-            <span class="setting-copy"><span class="setting-title">Local wallpaper</span><span class="setting-desc">Or load any image from your device as the new-tab background.</span></span>
+            <span class="setting-copy"><span class="setting-title">Local wallpaper</span><span class="setting-desc">Or load any image from your device as the new-tab background. The accent follows the wallpaper.</span></span>
             <span class="wallpaper-file">
               <input type="file" id="wallpaperFile" accept="image/*" aria-label="Wallpaper image from device">
               <span class="wallpaper-file-name" id="wallpaperFileName"></span>
               <button type="button" class="btn text small" id="wallpaperClearBtn">Clear</button>
             </span>
-          </div>
-          <div class="setting-row">
-            <span class="setting-copy"><span class="setting-title">Background blur</span><span class="setting-desc">Blur the wallpaper background itself, in pixels.</span></span>
-            <input type="range" min="0" max="40" step="2" data-setting="wallpaperBgBlur" class="range" aria-label="Background wallpaper blur">
           </div>
         </div>
 

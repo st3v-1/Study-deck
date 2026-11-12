@@ -1,8 +1,8 @@
 # UI audit report
 
-Generated: 2026-11-11 13:53
+Generated: 2026-11-12 10:29
 
-**Checks:** 45 · PASS 45 · FAIL 0 · WARN 0 · SKIP 0
+**Checks:** 46 · PASS 46 · FAIL 0 · WARN 0 · SKIP 0
 
 | Section | ID | Result | Detail |
 | --- | --- | --- | --- |
@@ -26,6 +26,7 @@ Generated: 2026-11-11 13:53
 | M. Motion & states | M6 Pomodoro persistence | PASS | running timer restores from an end timestamp |
 | O. Tracker & review | O2/O4 Overrides + frozen columns | PASS | computed-cell overrides reset with ↺; identity columns are sticky |
 | L. Accessibility | L6 System font stack | PASS | no reference to an unbundled Inter face |
+| O. Tracker & review | O6 Bookmark star pin | PASS | star hit area is contained and URLs match through dockMatch() |
 | N. Data & sync | N0 Manifest chrome | PASS | valid JSON |
 | N. Data & sync | N0 Manifest firefox | PASS | valid JSON |
 | N. Data & sync | N0 ZIP study-deck-chrome.zip | PASS | integrity ok |

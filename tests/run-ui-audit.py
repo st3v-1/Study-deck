@@ -167,6 +167,12 @@ def static_checks():
     add("L. Accessibility", "L6 System font stack", "PASS" if "font-family=\"Inter\"" not in js and '"Inter"' not in css else "FAIL",
         "no reference to an unbundled Inter face")
 
+    # Bookmark star pins to dock in both engines
+    star_pos = re.search(r"\.bm-star\s*\{[^}]*position:\s*relative", css)
+    star_click = "function dockMatch" in js and "dockMatch(bm.url)" in js and "addDockItem(bm.title" in js
+    add("O. Tracker & review", "O6 Bookmark star pin", "PASS" if star_pos and star_click else "FAIL",
+        "star hit area is contained and URLs match through dockMatch()")
+
     # Manifests + ZIPs + dist sync
     for manifest in ("dist/chrome/manifest.json", "dist/firefox/manifest.json"):
         try:

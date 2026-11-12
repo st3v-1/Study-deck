@@ -1953,7 +1953,7 @@ html[data-surface="frosted"] .apps-dialog .apps-sheet {
 }
 .bm-title { display: block; overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .bm-url { display: block; overflow: hidden; color: var(--md-on-surface-variant); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.bm-star { width: 36px; height: 36px; }
+.bm-star { position: relative; width: 36px; height: 36px; }
 .bm-star::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
 .bm-star svg { width: 19px; height: 19px; }
 .bm-star.active { color: var(--md-primary); }

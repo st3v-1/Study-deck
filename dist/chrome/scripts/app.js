@@ -1042,13 +1042,19 @@
     }
   }
 
+  function dockMatch(url) {
+    const clean = normalizeUrl(url);
+    if (!clean) return null;
+    return dockItems.find((d) => normalizeUrl(d.url) === clean) || null;
+  }
+
   function addDockItem(title, url) {
     const clean = normalizeUrl(url);
     if (!clean) {
       showToast(toastIcon("i-alert") + "That doesn’t look like a valid web address.");
       return false;
     }
-    if (dockItems.some((d) => d.url === clean)) {
+    if (dockMatch(clean)) {
       showToast("That bookmark is already in your dock.");
       return false;
     }
@@ -1276,7 +1282,9 @@
       title.textContent = bm.title || hostOf(bm.url);
       const url = document.createElement("span");
       url.className = "bm-url";
-      url.textContent = hostOf(bm.url) + new URL(bm.url).pathname.replace(/\/$/, "");
+      let path = "";
+      try { path = new URL(bm.url).pathname.replace(/\/$/, ""); } catch (e) { path = ""; }
+      url.textContent = hostOf(bm.url) + path;
       main.append(title, url);
       main.addEventListener("click", () => {
         window.open(bm.url, "_blank", "noopener");
@@ -1284,11 +1292,15 @@
 
       const star = document.createElement("button");
       star.type = "button";
-      star.className = "icon-btn bm-star" + (dockItems.some((d) => d.url === bm.url) ? " active" : "");
-      star.title = star.classList.contains("active") ? "Remove from dock" : "Add to dock";
-      star.innerHTML = '<svg class="icon"><use href="' + (star.classList.contains("active") ? "#i-star" : "#i-star-outline") + '"></use></svg>';
-      star.addEventListener("click", () => {
-        const existing = dockItems.find((d) => d.url === bm.url);
+      const inDock = !!dockMatch(bm.url);
+      star.className = "icon-btn bm-star" + (inDock ? " active" : "");
+      star.title = inDock ? "Remove from dock" : "Add to dock";
+      star.setAttribute("aria-label", inDock ? "Remove " + (bm.title || hostOf(bm.url)) + " from dock" : "Pin " + (bm.title || hostOf(bm.url)) + " to dock");
+      star.innerHTML = '<svg class="icon"><use href="' + (inDock ? "#i-star" : "#i-star-outline") + '"></use></svg>';
+      star.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const existing = dockMatch(bm.url);
         if (existing) {
           removeDockItem(existing.id);
           showToast("Removed from dock.");

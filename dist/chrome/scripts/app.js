@@ -37,6 +37,7 @@
     glassStrength: 62,
     glassGlow: true,
     wallpaperBlur: 30,
+    wallpaperImage: "",
     homeName: "",
     homeLayout: "split",
     hideWidgetsOnHome: true,
@@ -289,6 +290,7 @@
     if (s.accent !== "custom" && !ACCENTS[s.accent]) s.accent = "blue";
     if (!["gradient", "soft", "plain"].includes(s.background) && !WALLPAPERS[s.background]) s.background = "gradient";
     s.wallpaperBlur = clamp(Number(s.wallpaperBlur) || 30, 0, 60);
+    if (typeof s.wallpaperImage !== "string") s.wallpaperImage = "";
     if (!ENGINES[s.engine]) s.engine = "google";
     s.dockSize = clamp(Number(s.dockSize) || 58, 44, 76);
     if (!CLOCK_STYLES[s.clockStyle]) s.clockStyle = "digital";
@@ -579,6 +581,11 @@
     rootEl.setAttribute("data-motion", settings.animations ? "on" : "off");
     rootEl.setAttribute("data-home-layout", settings.homeLayout);
     rootEl.style.setProperty("--dock-size", settings.dockSize + "px");
+
+    if (settings.wallpaperImage) {
+      rootEl.setAttribute("data-bg", "image");
+      rootEl.style.setProperty("--wallpaper-image", "url(" + settings.wallpaperImage + ")");
+    }
 
     applySurfaceStyle();
     applyWallpaperBlur();
@@ -2992,6 +2999,36 @@
         persistBootTheme();
       });
       accentCustom.addEventListener("change", () => saveSettings());
+    }
+
+    /* local wallpaper image */
+    const wallpaperFile = $("#wallpaperFile");
+    const wallpaperClear = $("#wallpaperClearBtn");
+    const wallpaperName = $("#wallpaperFileName");
+    if (wallpaperFile) {
+      wallpaperFile.addEventListener("change", () => {
+        const file = wallpaperFile.files && wallpaperFile.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          settings.wallpaperImage = String(reader.result || "");
+          applySettings();
+          saveSettings();
+          persistBootTheme();
+          if (wallpaperName) wallpaperName.textContent = file.name;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    if (wallpaperClear) {
+      wallpaperClear.addEventListener("click", () => {
+        settings.wallpaperImage = "";
+        applySettings();
+        saveSettings();
+        persistBootTheme();
+        if (wallpaperName) wallpaperName.textContent = "";
+        if (wallpaperFile) wallpaperFile.value = "";
+      });
     }
 
     /* settings switches and selects */

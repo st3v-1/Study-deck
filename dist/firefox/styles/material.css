@@ -195,6 +195,13 @@ a { color: var(--link); }
   pointer-events: none;
   opacity: 0.8;
 }
+.wallpaper-layer {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
 .orb {
   position: absolute;
   border-radius: 50%;
@@ -235,11 +242,14 @@ html[data-bg="plain"] .ambient { display: none; }
 html[data-bg="soft"] .orb-a,
 html[data-bg="soft"] .orb-b,
 html[data-bg="soft"] .orb-c { opacity: 0.18; filter: blur(max(var(--orb-blur, 90px), 120px)); }
-html[data-bg="image"] body {
+html[data-bg="image"] body { background-image: none; background-color: var(--mynt-bg); }
+html[data-bg="image"] .ambient .wallpaper-layer {
   background-image: var(--wallpaper-image);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  opacity: 1;
+  filter: blur(var(--wallpaper-bg-blur, 0px));
 }
 
 /* ---------------- app shell ---------------- */

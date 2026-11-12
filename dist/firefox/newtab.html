@@ -55,6 +55,7 @@
 </svg>
 
 <div class="ambient" aria-hidden="true">
+  <div class="wallpaper-layer" aria-hidden="true"></div>
   <span class="orb orb-a"></span>
   <span class="orb orb-b"></span>
   <span class="orb orb-c"></span>
@@ -552,6 +553,10 @@
               <span class="wallpaper-file-name" id="wallpaperFileName"></span>
               <button type="button" class="btn text small" id="wallpaperClearBtn">Clear</button>
             </span>
+          </div>
+          <div class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Background blur</span><span class="setting-desc">Blur the wallpaper background itself, in pixels.</span></span>
+            <input type="range" min="0" max="40" step="2" data-setting="wallpaperBgBlur" class="range" aria-label="Background wallpaper blur">
           </div>
         </div>
 

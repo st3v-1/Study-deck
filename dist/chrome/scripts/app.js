@@ -37,6 +37,7 @@
     glassStrength: 62,
     glassGlow: true,
     wallpaperBlur: 30,
+    wallpaperBgBlur: 0,
     wallpaperImage: "",
     homeName: "",
     homeLayout: "split",
@@ -290,6 +291,7 @@
     if (s.accent !== "custom" && !ACCENTS[s.accent]) s.accent = "blue";
     if (!["gradient", "soft", "plain"].includes(s.background) && !WALLPAPERS[s.background]) s.background = "gradient";
     s.wallpaperBlur = clamp(Number(s.wallpaperBlur) || 30, 0, 60);
+    s.wallpaperBgBlur = clamp(Number(s.wallpaperBgBlur) || 0, 0, 40);
     if (typeof s.wallpaperImage !== "string") s.wallpaperImage = "";
     if (!ENGINES[s.engine]) s.engine = "google";
     s.dockSize = clamp(Number(s.dockSize) || 58, 44, 76);
@@ -545,6 +547,11 @@
     rootEl.style.setProperty("--orb-blur", Math.max(0, Math.min(60, Math.round(v))).toFixed(0) + "px");
   }
 
+  function applyWallpaperBgBlur() {
+    const v = Number.isFinite(Number(settings.wallpaperBgBlur)) ? Number(settings.wallpaperBgBlur) : 0;
+    rootEl.style.setProperty("--wallpaper-bg-blur", Math.max(0, Math.min(40, Math.round(v))).toFixed(0) + "px");
+  }
+
   const GOOGLE_LOGO_SVG =
     '<svg viewBox="0 0 48 48" aria-hidden="true">' +
       '<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>' +
@@ -589,6 +596,7 @@
 
     applySurfaceStyle();
     applyWallpaperBlur();
+    applyWallpaperBgBlur();
     applySearchEngineBranding();
     applyWidgetVisibility();
     if ($("#dock")) $("#dock").classList.toggle("no-magnify", !settings.dockMagnify);
@@ -3044,6 +3052,8 @@
             applySurfaceStyle();
           } else if (key === "wallpaperBlur") {
             applyWallpaperBlur();
+          } else if (key === "wallpaperBgBlur") {
+            applyWallpaperBgBlur();
           }
           persistBootTheme();
         });

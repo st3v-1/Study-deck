@@ -1,8 +1,8 @@
 # UI audit report
 
-Generated: 2026-11-12 10:29
+Generated: 2026-11-12 11:17
 
-**Checks:** 46 · PASS 46 · FAIL 0 · WARN 0 · SKIP 0
+**Checks:** 52 · PASS 52 · FAIL 0 · WARN 0 · SKIP 0
 
 | Section | ID | Result | Detail |
 | --- | --- | --- | --- |
@@ -15,7 +15,7 @@ Generated: 2026-11-12 10:29
 | L. Accessibility | L1 Control names | PASS | all buttons named |
 | L. Accessibility | L3 h1 per panel | PASS | all panels have h1 |
 | J. Settings | J3/J4 No dead drag UI | PASS | clean |
-| A. App shell | A6 CSS balance | PASS | braces 648 / 648 |
+| A. App shell | A6 CSS balance | PASS | braces 731 / 731 |
 | A. App shell | A7 JS balance | PASS | balanced |
 | H. Google apps popup | H1 Anchored popup | PASS | anchored to #appsBtn with a transparent backdrop |
 | D. Home dashboard | D6 Overdue tag | PASS | visible Overdue tag next to late tasks |
@@ -27,6 +27,12 @@ Generated: 2026-11-12 10:29
 | O. Tracker & review | O2/O4 Overrides + frozen columns | PASS | computed-cell overrides reset with ↺; identity columns are sticky |
 | L. Accessibility | L6 System font stack | PASS | no reference to an unbundled Inter face |
 | O. Tracker & review | O6 Bookmark star pin | PASS | star hit area is contained and URLs match through dockMatch() |
+| P. MYNT theme | P1 Tonal palettes | PASS | eleven tonal palettes with six roles drive --mynt-* and --md-* tokens |
+| P. MYNT theme | P2 Poppins bundle | PASS | bundled Poppins with OFL licence and local @font-face |
+| P. MYNT theme | P3 Blob analog clock | PASS | MYNT squircle face, pill hands, orbiting second dot, CSS sweep |
+| P. MYNT theme | P4 Motion tokens | PASS | Material easing tokens and dock hover lift |
+| P. MYNT theme | P5 Rounded icon set | PASS | stroke-based rounded sprite with tinted tiles |
+| P. MYNT theme | P6 Custom palette | PASS | colour picker generates a full tonal ramp |
 | N. Data & sync | N0 Manifest chrome | PASS | valid JSON |
 | N. Data & sync | N0 Manifest firefox | PASS | valid JSON |
 | N. Data & sync | N0 ZIP study-deck-chrome.zip | PASS | integrity ok |

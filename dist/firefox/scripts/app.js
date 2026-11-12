@@ -8,7 +8,8 @@
 
   const DEFAULT_SETTINGS = {
     theme: "system",
-    accent: "purple",
+    accent: "blue",
+    customAccent: "",
     background: "gradient",
     animations: true,
     compact: false,
@@ -23,7 +24,7 @@
     dockMagnify: true,
     dockNewTab: true,
     dockSize: 58,
-    clockStyle: "digital",
+    clockStyle: "analog",
     clockSeconds: true,
     clockShowDate: true,
     widgetPositions: {
@@ -71,15 +72,19 @@
     };
   }
 
+  /* MYNT-style tonal palettes: six roles per colour. */
   const ACCENTS = {
-    purple: { name: "Purple", h: 259, s: 55, swatch: "#6750A4" },
-    blue: { name: "Blue", h: 215, s: 68, swatch: "#1A73E8" },
-    teal: { name: "Teal", h: 174, s: 48, swatch: "#00897B" },
-    green: { name: "Green", h: 145, s: 42, swatch: "#2E7D32" },
-    orange: { name: "Orange", h: 26, s: 82, swatch: "#E8710A" },
-    pink: { name: "Pink", h: 333, s: 58, swatch: "#C2185B" },
-    red: { name: "Red", h: 356, s: 62, swatch: "#C5221F" },
-    yellow: { name: "Yellow", h: 44, s: 85, swatch: "#F9AB00", primaryLight: 34 }
+    blue: { name: "Blue", swatch: "#4382EC", bg: "#BBD6FD", tint: "#E2EEFF", dark: "#4382EC", darker: "#3569B2", text: "#1B3041", on: "#FFFFFF" },
+    red: { name: "Red", swatch: "#EC4343", bg: "#FDBDBD", tint: "#FFE7E7", dark: "#EC4343", darker: "#B23535", text: "#411B1B", on: "#FFFFFF" },
+    yellow: { name: "Yellow", swatch: "#D1A93D", bg: "#FFED80", tint: "#FFF6C3", dark: "#D1A93D", darker: "#AE9502", text: "#2F2707", on: "#FFFFFF" },
+    green: { name: "Green", swatch: "#5CBA5C", bg: "#C7E4C7", tint: "#E1F1E1", dark: "#5CBA5C", darker: "#458245", text: "#1B411B", on: "#FFFFFF" },
+    cyan: { name: "Cyan", swatch: "#09B2B4", bg: "#9CEFEF", tint: "#D5FFFF", dark: "#09B2B4", darker: "#07787F", text: "#08354B", on: "#FFFFFF" },
+    pink: { name: "Pink", swatch: "#EC5E78", bg: "#F9C8D6", tint: "#FFEBF2", dark: "#EC5E78", darker: "#B24B64", text: "#411B28", on: "#FFFFFF" },
+    orange: { name: "Orange", swatch: "#EC844D", bg: "#FFD8B2", tint: "#FFEDD5", dark: "#EC844D", darker: "#B26D3E", text: "#412B1E", on: "#FFFFFF" },
+    purple: { name: "Purple", swatch: "#9563B5", bg: "#DAC2E8", tint: "#E9E2F3", dark: "#9563B5", darker: "#724B8F", text: "#2D1B3E", on: "#FFFFFF" },
+    silver: { name: "Silver", swatch: "#9E9E9E", bg: "#C6C6C6", tint: "#E5E5E5", dark: "#9E9E9E", darker: "#6F6F6F", text: "#333333", on: "#FFFFFF" },
+    brown: { name: "Brown", swatch: "#705347", bg: "#DFC28D", tint: "#EAE3C9", dark: "#705347", darker: "#4E3930", text: "#16100D", on: "#FFFFFF" },
+    peach: { name: "Peach", swatch: "#E8705C", bg: "#FFCCBF", tint: "#FDF1EF", dark: "#E8705C", darker: "#B24E3E", text: "#441730", on: "#FFFFFF", custom: true }
   };
 
   const ENGINES = {
@@ -268,7 +273,9 @@
   function normalizeSettings(saved) {
     const s = Object.assign({}, DEFAULT_SETTINGS, saved && typeof saved === "object" ? saved : {});
     if (!["system", "light", "dark"].includes(s.theme)) s.theme = "system";
-    if (!ACCENTS[s.accent]) s.accent = "purple";
+    if (typeof s.customAccent !== "string" || !/^#[0-9a-f]{6}$/i.test(s.customAccent)) s.customAccent = "";
+    if (s.accent === "custom" && !s.customAccent) s.accent = "blue";
+    if (s.accent !== "custom" && !ACCENTS[s.accent]) s.accent = "blue";
     if (!["gradient", "soft", "plain"].includes(s.background)) s.background = "gradient";
     if (!ENGINES[s.engine]) s.engine = "google";
     s.dockSize = clamp(Number(s.dockSize) || 58, 44, 76);
@@ -302,35 +309,104 @@
     return settings.theme;
   }
 
+  function mixHex(a, b, t) {
+    const pa = hexRgb(a);
+    const pb = hexRgb(b);
+    const k = clamp(t, 0, 1);
+    const ch = (i) => Math.round(pa[i] + (pb[i] - pa[i]) * k).toString(16).padStart(2, "0");
+    return "#" + ch(0) + ch(1) + ch(2);
+  }
+
+  function hexRgb(hex) {
+    let h = String(hex || "").replace("#", "").trim();
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    if (!/^[0-9a-f]{6}$/i.test(h)) return [0, 0, 0];
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+
+  function paletteFromHex(hex) {
+    const base = /^#[0-9a-f]{6}$/i.test(hex || "") ? hex : "#696969";
+    return {
+      name: "Custom",
+      swatch: base,
+      bg: mixHex(base, "#FFFFFF", 0.70),
+      tint: mixHex(base, "#FFFFFF", 0.90),
+      dark: base,
+      darker: mixHex(base, "#000000", 0.30),
+      text: mixHex(base, "#000000", 0.80),
+      on: "#FFFFFF"
+    };
+  }
+
+  function activePalette() {
+    if (settings.accent === "custom" && settings.customAccent) {
+      return paletteFromHex(settings.customAccent);
+    }
+    return ACCENTS[settings.accent] || ACCENTS.blue;
+  }
+
   function applyAccentTokens() {
-    const a = ACCENTS[settings.accent] || ACCENTS.purple;
+    const p = activePalette();
     const dark = rootEl.getAttribute("data-theme") === "dark";
-    const h = a.h;
-    const s = a.s;
     const set = (name, value) => rootEl.style.setProperty(name, value);
 
+    set("--mynt-bg", dark ? "#171615" : p.bg);
+    set("--mynt-tint", dark ? mixHex("#2B2724", p.dark, 0.20) : p.tint);
+    set("--mynt-dark", dark ? mixHex(p.dark, "#FFFFFF", 0.30) : p.dark);
+    set("--mynt-darker", dark ? mixHex(p.dark, "#FFFFFF", 0.45) : p.darker);
+    set("--mynt-text", dark ? "#ECE5E0" : p.text);
+    set("--mynt-on", dark ? "#1B1918" : p.on);
+
     if (dark) {
-      set("--md-primary", "hsl(" + h + " " + clamp(s + 10, 20, 85) + "% 78%)");
-      set("--md-on-primary", "hsl(" + h + " " + clamp(s, 20, 80) + "% 16%)");
-      set("--md-primary-container", "hsl(" + h + " " + clamp(s - 12, 12, 70) + "% 32%)");
-      set("--md-on-primary-container", "hsl(" + h + " " + clamp(s, 12, 80) + "% 92%)");
-      set("--md-secondary", "hsl(" + h + " " + clamp(s - 15, 10, 50) + "% 78%)");
-      set("--md-secondary-container", "hsl(" + h + " " + clamp(s - 10, 10, 45) + "% 30%)");
-      set("--md-on-secondary-container", "hsl(" + h + " " + clamp(s, 10, 70) + "% 92%)");
-      set("--md-tertiary", "hsl(" + ((h + 58) % 360) + " " + clamp(s - 10, 20, 60) + "% 72%)");
-      set("--md-tertiary-container", "hsl(" + ((h + 58) % 360) + " " + clamp(s - 18, 15, 50) + "% 30%)");
-      set("--md-on-tertiary-container", "hsl(" + ((h + 58) % 360) + " " + clamp(s, 15, 60) + "% 92%)");
+      set("--md-primary", mixHex(p.dark, "#FFFFFF", 0.34));
+      set("--md-on-primary", "#221C28");
+      set("--md-primary-container", mixHex(p.dark, "#1B1918", 0.72));
+      set("--md-on-primary-container", mixHex(p.dark, "#FFFFFF", 0.84));
+      set("--md-secondary", mixHex(p.dark, "#FFFFFF", 0.55));
+      set("--md-secondary-container", mixHex(p.dark, "#1B1918", 0.78));
+      set("--md-on-secondary-container", mixHex(p.dark, "#FFFFFF", 0.86));
+      set("--md-tertiary", mixHex(p.bg, "#FFFFFF", 0.62));
+      set("--md-tertiary-container", mixHex(p.bg, "#1B1918", 0.74));
+      set("--md-on-tertiary-container", mixHex(p.bg, "#FFFFFF", 0.86));
+      set("--md-surface", "#141312");
+      set("--md-surface-dim", "#0E0D0C");
+      set("--md-surface-container-lowest", "#0E0D0C");
+      set("--md-surface-container-low", "#1B1918");
+      set("--md-surface-container", "#201D1B");
+      set("--md-surface-container-high", "#282422");
+      set("--md-surface-container-highest", "#322D2A");
+      set("--md-on-surface", "#ECE5E0");
+      set("--md-on-surface-variant", "#CFC5BE");
+      set("--md-outline", "#978E88");
+      set("--md-outline-variant", "#4B4642");
+      set("--md-inverse-surface", "#ECE5E0");
+      set("--md-inverse-on-surface", "#2A2725");
+      set("--md-scrim", "rgba(0, 0, 0, 0.55)");
     } else {
-      set("--md-primary", "hsl(" + h + " " + clamp(s + 5, 20, 85) + "% " + (a.primaryLight || 40) + "%)");
-      set("--md-on-primary", "#ffffff");
-      set("--md-primary-container", "hsl(" + h + " " + clamp(s + 15, 25, 90) + "% 90%)");
-      set("--md-on-primary-container", "hsl(" + h + " " + clamp(s + 10, 25, 85) + "% 18%)");
-      set("--md-secondary", "hsl(" + h + " " + clamp(s - 15, 10, 45) + "% 40%)");
-      set("--md-secondary-container", "hsl(" + h + " " + clamp(s, 10, 60) + "% 92%)");
-      set("--md-on-secondary-container", "hsl(" + h + " " + clamp(s, 10, 60) + "% 20%)");
-      set("--md-tertiary", "hsl(" + ((h + 58) % 360) + " " + clamp(s - 8, 20, 55) + "% 38%)");
-      set("--md-tertiary-container", "hsl(" + ((h + 58) % 360) + " " + clamp(s, 20, 60) + "% 92%)");
-      set("--md-on-tertiary-container", "hsl(" + ((h + 58) % 360) + " " + clamp(s, 20, 60) + "% 18%)");
+      set("--md-primary", p.darker);
+      set("--md-on-primary", "#FFFFFF");
+      set("--md-primary-container", p.tint);
+      set("--md-on-primary-container", p.text);
+      set("--md-secondary", p.darker);
+      set("--md-secondary-container", p.tint);
+      set("--md-on-secondary-container", p.text);
+      set("--md-tertiary", mixHex(p.dark, p.text, 0.30));
+      set("--md-tertiary-container", mixHex(p.tint, p.bg, 0.45));
+      set("--md-on-tertiary-container", p.text);
+      set("--md-surface", p.bg);
+      set("--md-surface-dim", mixHex(p.bg, p.text, 0.06));
+      set("--md-surface-container-lowest", "#FFFFFF");
+      set("--md-surface-container-low", mixHex(p.bg, "#FFFFFF", 0.72));
+      set("--md-surface-container", mixHex(p.bg, "#FFFFFF", 0.52));
+      set("--md-surface-container-high", mixHex(p.bg, "#FFFFFF", 0.32));
+      set("--md-surface-container-highest", mixHex(p.tint, p.bg, 0.55));
+      set("--md-on-surface", p.text);
+      set("--md-on-surface-variant", mixHex(p.text, p.bg, 0.16));
+      set("--md-outline", mixHex(p.text, p.bg, 0.42));
+      set("--md-outline-variant", mixHex(p.text, p.bg, 0.18));
+      set("--md-inverse-surface", p.text);
+      set("--md-inverse-on-surface", p.tint);
+      set("--md-scrim", "rgba(20, 18, 24, 0.31)");
     }
     rootEl.setAttribute("data-accent", settings.accent);
   }
@@ -467,6 +543,9 @@
     $$(".swatch").forEach((b) => b.classList.toggle("active", b.dataset.accent === settings.accent));
     $$("#clockChoices [data-clock-style]").forEach((b) => b.classList.toggle("active", b.dataset.clockStyle === settings.clockStyle));
 
+    const customAccentInput = $("#accentCustom");
+    if (customAccentInput && settings.customAccent) customAccentInput.value = settings.customAccent;
+
     const syncToggle = $("#syncToggle");
     if (syncToggle) {
       syncToggle.checked = !!settings.syncEnabled && store.syncAvailable;
@@ -534,26 +613,15 @@
   }
 
   function analogClockMarkup() {
-    let ticks = "";
-    for (let i = 0; i < 12; i++) {
-      const angle = i * Math.PI / 6;
-      const major = i % 3 === 0;
-      const r1 = major ? 37 : 44;
-      const x1 = 60 + Math.sin(angle) * r1;
-      const y1 = 60 - Math.cos(angle) * r1;
-      const x2 = 60 + Math.sin(angle) * 50;
-      const y2 = 60 - Math.cos(angle) * 50;
-      ticks += '<line class="a-tick' + (major ? " major" : "") + '" x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '"/>';
-    }
+    /* MYNT blob face — no ticks or numerals. */
+    const face = "M93.6379 63.9405C89.7543 78.4344 78.4333 89.7554 63.9394 93.639l-7.4405 1.9937c-22.4055 6.0033-35.702 29.0333-29.6984 51.4393l1.9196 7.164c3.8837 14.494-.2601 29.959-10.8704 40.569l-5.5482 5.548c-16.402 16.402-16.402 42.995 0 59.397l5.6221 5.622c10.6102 10.611 14.754 26.075 10.8704 40.569l-1.9936 7.441c-6.0036 22.405 7.2929 45.435 29.6985 51.439l7.4406 1.994c14.4939 3.883 25.8149 15.204 29.6985 29.698l1.9942 7.443c6.0038 22.405 29.0338 35.702 51.4388 29.698l7.442-1.994c14.494-3.883 29.959.26 40.569 10.871l5.271 5.271c16.402 16.402 42.995 16.402 59.397 0l5.347-5.347c10.61-10.61 26.075-14.754 40.569-10.87l7.717 2.068c22.405 6.003 45.435-7.293 51.439-29.699l1.993-7.439c3.884-14.494 15.205-25.815 29.699-29.699l7.441-1.994c22.406-6.003 35.702-29.033 29.699-51.439l-2.068-7.718c-3.884-14.493.26-29.958 10.87-40.569l5.346-5.346c16.402-16.402 16.402-42.995 0-59.397l-5.272-5.272c-10.61-10.61-14.754-26.075-10.87-40.569l1.994-7.441c6.003-22.406-7.293-45.436-29.699-51.4398l-7.441-1.9939c-14.494-3.8836-25.815-15.2046-29.699-29.6984l-1.993-7.4395c-6.004-22.4056-29.034-35.702-51.439-29.6985l-7.441 1.9937c-14.494 3.8836-29.959-.2601-40.569-10.8704l-5.623-5.6227c-16.402-16.402-42.995-16.402-59.397 0l-5.547 5.5476c-10.61 10.6102-26.075 14.754-40.569 10.8704l-7.166-1.92c-22.405-6.0036-45.435 7.2929-51.4388 29.6985l-1.9943 7.4425Z";
     return (
       '<div class="analog-wrap">' +
-        '<svg class="analog" viewBox="0 0 120 120" role="img" aria-label="Analog clock">' +
-          '<circle class="a-face" cx="60" cy="60" r="56"/>' +
-          ticks +
-          '<line class="a-hand a-hour" x1="60" y1="60" x2="60" y2="36"/>' +
-          '<line class="a-hand a-minute" x1="60" y1="60" x2="60" y2="19"/>' +
-          '<line class="a-hand a-second" x1="60" y1="60" x2="60" y2="14"/>' +
-          '<circle class="a-pin" cx="60" cy="60" r="2.8"/>' +
+        '<svg class="analog" viewBox="0 0 461 461" role="img" aria-label="Analog clock">' +
+          '<path class="a-face" d="' + face + '"/>' +
+          '<g class="a-hand a-hour"><rect x="215.5" y="107.5" width="30" height="138" rx="15"/></g>' +
+          '<g class="a-hand a-minute"><rect x="215.5" y="76.5" width="30" height="169" rx="15"/></g>' +
+          '<g class="a-hand a-second"><circle cx="230.5" cy="76.5" r="15"/></g>' +
         '</svg>' +
       '</div>' +
       (settings.clockShowDate ? '<div class="clock-date">—</div>' : "") +
@@ -631,11 +699,30 @@
       const hour = (d.getHours() % 12) + d.getMinutes() / 60 + d.getSeconds() / 3600;
       const minute = d.getMinutes() + d.getSeconds() / 60;
       const second = d.getSeconds();
-      hourHand.setAttribute("transform", "rotate(" + (hour * 30).toFixed(2) + " 60 60)");
+      const firstPass = !block.__hands;
+      if (!block.__hands) block.__hands = {};
+      const rotateHand = (el, deg, key) => {
+        const state = block.__hands;
+        let total = deg;
+        if (Number.isFinite(state[key])) {
+          total += Math.floor(state[key] / 360) * 360;
+          if (total < state[key] - 1) total += 360;
+        }
+        state[key] = total;
+        if (firstPass) {
+          el.style.transition = "none";
+          el.style.transform = "rotate(" + total + "deg)";
+          void el.getBoundingClientRect();
+          el.style.transition = "";
+        } else {
+          el.style.transform = "rotate(" + total + "deg)";
+        }
+      };
+      rotateHand(hourHand, hour * 30, "h");
       const minuteHand = block.querySelector(".a-minute");
-      if (minuteHand) minuteHand.setAttribute("transform", "rotate(" + (minute * 6).toFixed(2) + " 60 60)");
+      if (minuteHand) rotateHand(minuteHand, minute * 6, "m");
       const secondHand = block.querySelector(".a-second");
-      if (secondHand) secondHand.setAttribute("transform", "rotate(" + (second * 6).toFixed(2) + " 60 60)");
+      if (secondHand) rotateHand(secondHand, second * 6, "s");
     }
   }
 
@@ -1383,7 +1470,7 @@
       b.dataset.accent = key;
       b.title = a.name;
       b.setAttribute("aria-label", a.name + " accent");
-      b.style.background = "hsl(" + a.h + " " + a.s + "% 45%)";
+      b.style.background = a.swatch;
       b.addEventListener("click", () => {
         settings.accent = key;
         applySettings();
@@ -1391,6 +1478,18 @@
       });
       host.appendChild(b);
     });
+    const customBtn = document.createElement("button");
+    customBtn.type = "button";
+    customBtn.className = "swatch swatch-custom";
+    customBtn.dataset.accent = "custom";
+    customBtn.title = "Custom colour";
+    customBtn.setAttribute("aria-label", "Custom accent colour");
+    customBtn.style.background = settings.customAccent || "conic-gradient(from 210deg, #EC4343, #D1A93D, #5CBA5C, #09B2B4, #4382EC, #9563B5, #EC4343)";
+    customBtn.addEventListener("click", () => {
+      const picker = $("#accentCustom");
+      if (picker) picker.click();
+    });
+    host.appendChild(customBtn);
   }
 
   /* ---------------- storage / sync UI ---------------- */
@@ -2771,6 +2870,20 @@
       applySettings();
       saveSettings();
     });
+
+    /* custom accent colour */
+    const accentCustom = $("#accentCustom");
+    if (accentCustom) {
+      accentCustom.addEventListener("input", () => {
+        settings.accent = "custom";
+        settings.customAccent = accentCustom.value;
+        applySettings();
+        const chip = $('.swatch[data-accent="custom"]');
+        if (chip) chip.style.background = settings.customAccent;
+        persistBootTheme();
+      });
+      accentCustom.addEventListener("change", () => saveSettings());
+    }
 
     /* settings switches and selects */
     $$("[data-setting]").forEach((el) => {

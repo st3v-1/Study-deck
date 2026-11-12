@@ -33,14 +33,17 @@ Works as a **Chrome / Edge / Brave** extension and as a **Firefox** extension.
 - **Favourites dock** with macOS-style hover magnification and drag-free
   reordering from Settings.
 - **Five Material You clock faces** — Digital, Stacked, Minimal, Analog and Chip
-  — with optional seconds and date.
+  — with optional seconds and date. The analog face is a MYNT-style blob clock
+  with pill hands and a smooth orbiting second dot.
 - **Widget placement**: put the clock, search, apps and favourites dock on any
   edge or corner with the arrow pad in **Settings → Layout → Widget positions**.
   **Reset widget positions** restores the defaults.
 - **Glassmorphic surfaces**: Solid, Glass and Frosted modes with adjustable
   strength and an optional accent glow.
-- **Material You theming**: 8 accent palettes, system/light/dark mode, three
-  background styles, compact density and animation toggle.
+- **MYNT-style Material You theming**: 11 tonal palettes plus a custom colour
+  picker that generates a whole ramp, Poppins typography, tinted glass
+  surfaces, rounded icon tiles, system/light/dark mode, three background
+  styles, compact density and an animation toggle.
 - **Browser sync** for devices signed into the same browser account, plus JSON
   export/import to move data between Chrome and Firefox.
 
@@ -128,7 +131,7 @@ windows) to switch between Home and the study sections.
 
 | Tab | What you can change |
 | --- | --- |
-| **Appearance** | Theme mode, clock face, seconds/date, accent colour, background, surface style (solid/glass/frosted), glass strength and glow, animations, compact density |
+| **Appearance** | Theme mode, clock face, seconds/date, tonal palette or custom accent colour, background, surface style (solid/glass/frosted), glass strength and glow, animations, compact density |
 | **Home** | Greeting name, home layout, show/hide greeting, clock, search, quick links, tasks and focus card; hide floating widgets while Home is open |
 | **Layout** | Show/hide clock, search bar, Pomodoro, bookmarks button, apps button and dock; place each widget with the 3×3 arrow pad or reset positions |
 | **Search** | Search engine and whether results open in a new tab |
@@ -188,6 +191,7 @@ study-deck-extension/
 │   ├── theme-init.js        # Applies theme before first paint
 │   ├── storage.js           # Extension storage + chunked sync + localStorage fallback
 │   └── app.js               # All dashboard logic
+├── fonts/                   # Bundled Poppins Regular + OFL licence
 ├── icons/                   # Extension icons
 ├── tests/
 │   ├── ui-test.html         # UI / design test harness

@@ -780,23 +780,29 @@ html[data-home-layout="compact"] .home-task-list { max-height: 220px; }
 
 .clock[data-style="analog"] { gap: 6px; }
 .analog-wrap { display: grid; place-items: center; }
-.analog { width: 120px; height: 120px; overflow: visible; }
+.analog {
+  width: 120px;
+  height: 120px;
+  overflow: visible;
+  animation: clockAnm 1s cubic-bezier(.4, 0, .2, 1);
+}
+@keyframes clockAnm {
+  from { transform: rotate(40deg); }
+  to { transform: rotate(0deg); }
+}
 .analog .a-face {
-  fill: color-mix(in srgb, var(--md-surface-container) 88%, transparent);
-  stroke: var(--md-outline-variant);
-  stroke-width: 1.6;
+  fill: color-mix(in srgb, var(--mynt-tint, var(--md-surface-container)) 94%, transparent);
+  stroke: color-mix(in srgb, var(--mynt-text, var(--md-on-surface)) 10%, transparent);
+  stroke-width: 1.2;
 }
-.analog .a-tick {
-  stroke: var(--md-on-surface-variant);
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  opacity: 0.45;
+.analog .a-hand {
+  transform-box: view-box;
+  transform-origin: 230.5px 230.5px;
+  will-change: transform;
 }
-.analog .a-tick.major { stroke: var(--md-primary); stroke-width: 2.6; opacity: 0.95; }
-.analog .a-hand { stroke: var(--md-on-surface); stroke-width: 3.4; stroke-linecap: round; }
-.analog .a-minute { stroke-width: 2.8; }
-.analog .a-second { stroke: var(--md-primary); stroke-width: 1.3; stroke-linecap: round; }
-.analog .a-pin { fill: var(--md-primary); }
+.analog .a-hour { fill: var(--mynt-darker, var(--md-primary)); transition: transform 1.4s cubic-bezier(.4, 0, .2, 1); }
+.analog .a-minute { fill: var(--mynt-dark, var(--md-primary)); transition: transform 1.4s cubic-bezier(.4, 0, .2, 1); }
+.analog .a-second { fill: var(--mynt-darker, var(--md-primary)); transition: transform 1s cubic-bezier(.4, 0, .2, 1); }
 .clock[data-style="analog"] .clock-date {
   margin-top: 0;
   font-size: 11px;
@@ -1600,6 +1606,7 @@ table.review-table tbody tr:hover td { background: var(--md-surface-container-lo
   100% { box-shadow: 0 0 0 0 transparent; }
 }
 .pomo-trigger-copy { display: flex; flex-direction: column; align-items: center; }
+.pomo-trigger-icon { display: none; width: 20px; height: 20px; }
 .trigger-time { font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .trigger-mode { color: var(--md-on-surface-variant); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
 
@@ -2476,7 +2483,8 @@ html[data-motion="off"] .orb { filter: none; opacity: 0.12; }
   .rail-small .rail-icon-wrap { width: 40px; }
   .pomo-trigger { width: 52px; min-width: 52px; padding: 5px 2px; }
   .pomo-trigger-copy { display: none; }
-  .pomo-trigger .live-dot { width: 9px; height: 9px; }
+  .pomo-trigger-icon { display: block; }
+  .pomo-trigger .live-dot { display: none; }
   .pomo-popup {
     position: fixed;
     left: auto;
@@ -2590,4 +2598,371 @@ html[data-motion="off"] .orb { filter: none; opacity: 0.12; }
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* ==================================================================
+   MYNT layer — Material You tonal palettes, Poppins, tinted surfaces,
+   rounded icon tiles, springy motion and the blob analog clock.
+   Values are driven at runtime by scripts/app.js (--mynt-* roles).
+   ================================================================== */
+
+@font-face {
+  font-family: "Poppins";
+  src: url("../fonts/Poppins-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --font-display: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --radius-xl: 30px;
+  --radius-lg: 24px;
+  --radius-md: 20px;
+  --radius-sm: 15px;
+  --radius-xs: 10px;
+
+  --mynt-bg: #BBD6FD;
+  --mynt-tint: #E2EEFF;
+  --mynt-dark: #4382EC;
+  --mynt-darker: #3569B2;
+  --mynt-text: #1B3041;
+  --mynt-on: #FFFFFF;
+  --transparency: 90%;
+
+  --md-motion-ease: cubic-bezier(.4, 0, .2, 1);
+  --md-motion-decelerate: cubic-bezier(0, 0, .2, 1);
+  --md-motion-accelerate: cubic-bezier(.4, 0, 1, 1);
+  --state-transition: 220ms var(--md-motion-ease);
+}
+
+/* ---- canvas & ambience ---- */
+
+body {
+  background-color: var(--mynt-bg);
+  background-image:
+    radial-gradient(1200px 700px at 12% -10%, color-mix(in srgb, var(--mynt-tint) 92%, transparent), transparent 60%),
+    radial-gradient(900px 620px at 96% 4%, color-mix(in srgb, var(--mynt-bg) 70%, var(--mynt-dark) 30%), transparent 62%);
+}
+html[data-theme="dark"] body {
+  background-image:
+    radial-gradient(1100px 700px at 8% -8%, color-mix(in srgb, var(--mynt-dark) 16%, transparent), transparent 62%),
+    radial-gradient(900px 650px at 96% 6%, color-mix(in srgb, var(--mynt-bg) 60%, var(--mynt-dark) 14%), transparent 60%);
+}
+.orb-a { background: var(--mynt-dark); }
+.orb-b { background: var(--mynt-tint); }
+.orb-c { background: var(--mynt-darker); }
+.orb { opacity: .22; filter: blur(110px); }
+
+/* ---- shell surfaces ---- */
+
+.rail,
+.panel,
+.home-card,
+.home-hero {
+  border-color: color-mix(in srgb, var(--mynt-text) 10%, transparent);
+}
+.rail {
+  border-radius: 30px;
+  background: color-mix(in srgb, var(--mynt-tint) 78%, transparent);
+  box-shadow: 0 10px 32px color-mix(in srgb, var(--mynt-text) 10%, transparent);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+}
+html[data-theme="dark"] .rail { background: color-mix(in srgb, var(--mynt-tint) 72%, transparent); }
+
+.panel,
+.home-card,
+.home-hero {
+  background: color-mix(in srgb, var(--mynt-tint) 74%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--mynt-text) 6%, transparent),
+              0 14px 40px color-mix(in srgb, var(--mynt-text) 8%, transparent);
+  backdrop-filter: blur(18px) saturate(145%);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+}
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .home-card,
+html[data-theme="dark"] .home-hero {
+  background: color-mix(in srgb, var(--mynt-tint) 82%, transparent);
+}
+
+.brand-mark {
+  border-radius: 15px;
+  background: var(--mynt-dark);
+  color: var(--mynt-on);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--mynt-dark) 28%, transparent);
+}
+.rail-icon-wrap { border-radius: 999px; }
+.rail-item.active .rail-icon-wrap {
+  background: var(--mynt-tint);
+  color: var(--mynt-darker);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mynt-text) 8%, transparent);
+}
+.rail-item:hover .rail-icon-wrap { background: color-mix(in srgb, var(--mynt-tint) 70%, transparent); }
+.rail-item { transition: color 220ms var(--md-motion-ease), transform 220ms var(--md-motion-ease); }
+.rail-item:hover { transform: translateY(-1px); }
+
+/* ---- search ---- */
+
+.home-search,
+.search {
+  border-radius: 30px;
+  background: color-mix(in srgb, var(--mynt-tint) 88%, transparent);
+  border-color: color-mix(in srgb, var(--mynt-text) 8%, transparent);
+  transition: background 260ms var(--md-motion-ease), box-shadow 260ms var(--md-motion-ease);
+}
+.home-search:focus-within,
+.search:focus-within {
+  background: color-mix(in srgb, var(--mynt-tint) 96%, white 4%);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mynt-dark) 62%, transparent);
+}
+.home-search-go,
+.btn-primary,
+.btn-filled {
+  border-radius: 999px;
+  background: var(--mynt-darker);
+  color: var(--mynt-on);
+}
+
+/* ---- chips, eyebrows, pills ---- */
+
+.eyebrow,
+.chip,
+.badge,
+.tag {
+  background: color-mix(in srgb, var(--mynt-tint) 86%, transparent);
+  color: var(--mynt-darker);
+  border-radius: 999px;
+}
+.eyebrow { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mynt-text) 8%, transparent); }
+
+/* ---- dock: floating, tinted, radial icon tiles ---- */
+
+.dock {
+  padding: 12px 16px 14px;
+  border-radius: 30px;
+  border-color: color-mix(in srgb, var(--mynt-text) 9%, transparent);
+  background: color-mix(in srgb, var(--mynt-tint) 58%, transparent);
+  box-shadow: 0 18px 46px color-mix(in srgb, var(--mynt-text) 16%, transparent);
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+}
+.dock::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--mynt-tint) 70%, transparent);
+  opacity: 0;
+  transition: opacity 320ms var(--md-motion-ease);
+  pointer-events: none;
+}
+.dock:hover::before,
+.dock:focus-within::before { opacity: .55; }
+.dock-item {
+  border-radius: 50%;
+  transition: transform 320ms var(--md-motion-ease);
+}
+.dock-item:hover,
+.dock-item:focus-visible { --lift: -10px; }
+.dock-icon {
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--mynt-tint) 96%, white 4%) 66%, transparent 66%);
+  box-shadow: none;
+}
+.dock-icon::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--mynt-dark) 12%, transparent);
+  z-index: -1;
+}
+.dock-letter { color: var(--mynt-text); font-weight: 500; }
+.dock-tooltip {
+  bottom: calc(100% + 10px);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--mynt-text) 92%, transparent);
+  color: var(--mynt-tint);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 10px;
+}
+
+/* ---- icon tiles: apps, quick links ---- */
+
+.app-tile {
+  border-radius: 15px;
+  transition: background 220ms var(--md-motion-ease), transform 220ms var(--md-motion-ease);
+}
+.app-tile:hover {
+  background: color-mix(in srgb, var(--mynt-tint) 82%, transparent);
+  transform: translateY(-4px);
+}
+.app-tile .app-icon,
+.app-tile > .icon,
+.home-link-mark {
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--mynt-tint) 96%, white 4%) 66%, transparent 66%);
+}
+.home-link {
+  border-radius: 999px;
+  border-color: transparent;
+  background: color-mix(in srgb, var(--mynt-tint) 74%, transparent);
+  transition: background 220ms var(--md-motion-ease), transform 220ms var(--md-motion-ease);
+}
+.home-link:hover {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--mynt-tint) 96%, transparent);
+}
+.home-link:hover { transform: translateY(-2px); }
+
+/* ---- dialogs & drawers ---- */
+
+dialog::backdrop {
+  background: color-mix(in srgb, #000 31%, transparent);
+  backdrop-filter: blur(15px) saturate(160%);
+  -webkit-backdrop-filter: blur(15px) saturate(160%);
+}
+.apps-sheet,
+.settings-sheet,
+.bookmarks-panel {
+  border-radius: 30px;
+  border-color: color-mix(in srgb, var(--mynt-text) 10%, transparent);
+  background: color-mix(in srgb, var(--mynt-tint) 92%, transparent);
+  box-shadow: 0 30px 80px color-mix(in srgb, var(--mynt-text) 22%, transparent);
+}
+.bookmarks-panel {
+  border-radius: 30px 0 0 30px;
+  background: var(--mynt-tint);
+}
+.bookmarks-panel.open { animation: panelScaleIn 260ms var(--md-motion-decelerate); }
+.sheet-head {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--mynt-bg) 88%, transparent), color-mix(in srgb, var(--mynt-tint) 80%, transparent));
+}
+.bookmarks-panel .sheet-head { background: var(--mynt-bg); }
+.bookmarks-search {
+  background: color-mix(in srgb, var(--mynt-tint) 70%, white 30%);
+  border-color: color-mix(in srgb, var(--mynt-text) 10%, transparent);
+}
+@keyframes panelScaleIn {
+  from { opacity: 0; transform: scale(.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+.toast {
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--mynt-text) 92%, transparent);
+  color: var(--mynt-tint);
+  animation: toastIn 260ms var(--md-motion-decelerate);
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px) scale(.96); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---- settings ---- */
+
+.swatches { gap: 13px; }
+.swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mynt-text) 14%, transparent);
+  transition: transform 220ms var(--md-motion-ease), box-shadow 220ms var(--md-motion-ease);
+}
+.swatch:hover { transform: translateY(-2px) scale(1.06); }
+.swatch.active {
+  box-shadow: 0 0 0 3px var(--mynt-tint), 0 0 0 5px var(--mynt-darker);
+}
+.swatch-custom {
+  background-size: cover;
+  position: relative;
+}
+.accent-custom-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--mynt-tint) 70%, transparent);
+  cursor: pointer;
+}
+.accent-custom-row input[type="color"] {
+  width: 46px;
+  height: 46px;
+  min-height: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+.accent-custom-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.accent-custom-row input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+.accent-custom-row input[type="color"]::-moz-color-swatch { border: none; border-radius: 50%; }
+.accent-custom-copy { display: flex; flex-direction: column; gap: 2px; }
+.accent-custom-copy b { font-size: 13px; font-weight: 500; }
+.accent-custom-copy span { font-size: 11.5px; color: var(--md-on-surface-variant); }
+
+.seg {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mynt-tint) 70%, transparent);
+}
+.seg-btn { border-radius: 999px; }
+.seg-btn.active {
+  background: var(--mynt-tint);
+  color: var(--mynt-darker);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--mynt-text) 12%, transparent);
+}
+
+/* ---- motion: hover lift + entries ---- */
+
+.dock-item,
+.app-tile,
+.home-link,
+.rail-item,
+.swatch { will-change: transform; }
+.tab-panel.active { animation: panel-in 260ms var(--md-motion-decelerate); }
+.rAndakar { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .analog,
+  .analog .a-hand,
+  .dock-item,
+  .app-tile,
+  .home-link { transition-duration: .001ms !important; animation-duration: .001ms !important; }
+}
+
+/* Clock scale: MYNT's face is the focal point */
+.home-clock[data-style="analog"] .analog { width: 168px; height: 168px; }
+.widget-clock .analog { width: 156px; height: 156px; }
+.clock[data-style="analog"] .clock-date { margin-top: 2px; }
+
+html[data-theme="dark"] .analog .a-face {
+  fill: color-mix(in srgb, var(--mynt-tint) 92%, transparent);
+  stroke: color-mix(in srgb, var(--mynt-dark) 26%, transparent);
+  stroke-width: 2;
+}
+
+/* MYNT drawers are solid tinted sheets, not translucent glass. */
+html[data-surface="glass"] .bookmarks-panel,
+html[data-surface="frosted"] .bookmarks-panel {
+  background: var(--mynt-tint);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+/* MYNT modal sheets stay readable: tinted, near-opaque, no page bleed. */
+html[data-surface="glass"] .settings-sheet,
+html[data-surface="frosted"] .settings-sheet,
+html[data-surface="glass"] .apps-sheet,
+html[data-surface="frosted"] .apps-sheet {
+  /* Solid MYNT tint: panel text must never fight the page behind it. */
+  background: var(--mynt-tint);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }

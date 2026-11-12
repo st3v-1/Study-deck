@@ -15,7 +15,7 @@ cd "$(dirname "$0")"
 
 ROOT="$(pwd)"
 DIST="$ROOT/dist"
-COMMON=(newtab.html background.js icons scripts styles)
+COMMON=(newtab.html background.js icons scripts styles fonts)
 
 rm -rf "$DIST"
 mkdir -p "$DIST/chrome" "$DIST/firefox"

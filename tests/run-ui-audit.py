@@ -173,6 +173,28 @@ def static_checks():
     add("O. Tracker & review", "O6 Bookmark star pin", "PASS" if star_pos and star_click else "FAIL",
         "star hit area is contained and URLs match through dockMatch()")
 
+    # MYNT visual language
+    palette_js = all(role in js for role in ("bg:", "tint:", "dark:", "darker:", "text:", "on:")) and "applyAccentTokens" in js
+    add("P. MYNT theme", "P1 Tonal palettes", "PASS" if palette_js and "--mynt-tint" in css else "FAIL",
+        "eleven tonal palettes with six roles drive --mynt-* and --md-* tokens")
+    font_file = (ROOT / "fonts" / "Poppins-Regular.ttf").exists()
+    font_decl = '@font-face' in css and 'Poppins-Regular.ttf' in css and (ROOT / "fonts" / "OFL.txt").exists()
+    add("P. MYNT theme", "P2 Poppins bundle", "PASS" if font_file and font_decl else "FAIL",
+        "bundled Poppins with OFL licence and local @font-face")
+    blob_clock = "M93.6379" in js and "a-tick" not in js and 'class="a-hand a-second"' in js
+    add("P. MYNT theme", "P3 Blob analog clock", "PASS" if blob_clock else "FAIL",
+        "MYNT squircle face, pill hands, orbiting second dot, CSS sweep")
+    motion = all(t in css for t in ("--md-motion-ease", "--md-motion-decelerate", "--md-motion-accelerate"))
+    lift = "translateY(-10px) scale(1.03)" in css or "--lift: -10px" in css
+    add("P. MYNT theme", "P4 Motion tokens", "PASS" if motion and lift else "FAIL",
+        "Material easing tokens and dock hover lift")
+    stroke_icons = html.count('stroke-linecap="round"') >= 20
+    add("P. MYNT theme", "P5 Rounded icon set", "PASS" if stroke_icons else "FAIL",
+        "stroke-based rounded sprite with tinted tiles")
+    custom = "paletteFromHex" in js and 'id="accentCustom"' in html and "accentCustom" in js
+    add("P. MYNT theme", "P6 Custom palette", "PASS" if custom else "FAIL",
+        "colour picker generates a full tonal ramp")
+
     # Manifests + ZIPs + dist sync
     for manifest in ("dist/chrome/manifest.json", "dist/firefox/manifest.json"):
         try:
@@ -239,7 +261,7 @@ def make_variant(name, active_panel=None, settings_dialog=False, apps_dialog=Fal
                  bookmarks=False, clock_style=None):
     html = read("newtab.html")
     if clock_style:
-        src_js = read("scripts/app.js").replace('clockStyle: "digital"',
+        src_js = read("scripts/app.js").replace('clockStyle: "analog"',
                                                 'clockStyle: "%s"' % clock_style)
         audit_js = ROOT / "scripts" / ("_audit_%s.js" % clock_style)
         audit_js.write_text(src_js, encoding="utf-8")
@@ -256,14 +278,16 @@ def make_variant(name, active_panel=None, settings_dialog=False, apps_dialog=Fal
 
 def screenshot(name, page, width=1440, height=900):
     out = SHOTS / (name + ".png")
+    # Drop any previous capture so a failed run cannot be mistaken for a pass.
+    out.unlink(missing_ok=True)
     cmd = ["firefox", "--headless", "--no-remote", "--profile", str(PROFILE),
            "--window-size=%d,%d" % (width, height), "--screenshot", str(out), page.as_uri()]
     try:
         subprocess.run(cmd, check=True, capture_output=True, timeout=120)
-        return out if out.exists() else None
     except Exception as exc:  # noqa: BLE001
-        print("screenshot failed:", name, exc)
-        return None
+        # Firefox occasionally exits non-zero after the PNG is already written.
+        print("screenshot warning:", name, exc)
+    return out if out.exists() and out.stat().st_size else None
 
 
 def visual_checks():

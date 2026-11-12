@@ -1,8 +1,8 @@
 # UI audit report
 
-Generated: 2026-11-12 12:07
+Generated: 2026-11-12 13:35
 
-**Checks:** 59 · PASS 59 · FAIL 0 · WARN 0 · SKIP 0
+**Checks:** 60 · PASS 60 · FAIL 0 · WARN 0 · SKIP 0
 
 | Section | ID | Result | Detail |
 | --- | --- | --- | --- |
@@ -39,6 +39,7 @@ Generated: 2026-11-12 12:07
 | P. MYNT theme | P10 Type floor | PASS | no 11px/11.5px body copy |
 | P. MYNT theme | P11 Real font weights | PASS | Poppins 500/600/700 bundled, no faux bold |
 | P. MYNT theme | P12 Focus token | PASS | focus rings route through --focus-ring |
+| P. MYNT theme | P13 Custom wallpapers | PASS | wallpaper picker + soft glow blur slider drive the accent mood |
 | O. Tracker & review | O7 Tracker scroll affordance | PASS | sticky identity columns, edge fade and hint retire at the last column |
 | N. Data & sync | N0 Manifest chrome | PASS | valid JSON |
 | N. Data & sync | N0 Manifest firefox | PASS | valid JSON |

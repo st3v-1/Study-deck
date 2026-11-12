@@ -198,7 +198,7 @@ a { color: var(--link); }
 .orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(90px);
+  filter: blur(var(--orb-blur, 90px));
   opacity: 0.4;
   will-change: transform;
 }
@@ -234,7 +234,7 @@ a { color: var(--link); }
 html[data-bg="plain"] .ambient { display: none; }
 html[data-bg="soft"] .orb-a,
 html[data-bg="soft"] .orb-b,
-html[data-bg="soft"] .orb-c { opacity: 0.18; filter: blur(120px); }
+html[data-bg="soft"] .orb-c { opacity: 0.18; filter: blur(max(var(--orb-blur, 90px), 120px)); }
 
 /* ---------------- app shell ---------------- */
 

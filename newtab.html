@@ -532,6 +532,22 @@
         </div>
 
         <div class="setting-group">
+          <h3>Wallpaper</h3>
+          <p class="setting-desc">Pick an aesthetic wallpaper. Its mood tunes the deck’s accent colour.</p>
+          <div class="seg" id="wallpaperSeg">
+            <button type="button" data-wallpaper-choice="aurora">Aurora</button>
+            <button type="button" data-wallpaper-choice="sunset">Sunset</button>
+            <button type="button" data-wallpaper-choice="ocean">Ocean</button>
+            <button type="button" data-wallpaper-choice="forest">Forest</button>
+            <button type="button" data-wallpaper-choice="dusk">Dusk</button>
+          </div>
+          <div class="setting-row">
+            <span class="setting-copy"><span class="setting-title">Soft glow blur</span><span class="setting-desc">Strength of the ambient glow behind panels, in pixels.</span></span>
+            <input type="range" min="0" max="60" step="2" data-setting="wallpaperBlur" class="range" aria-label="Wallpaper soft glow blur">
+          </div>
+        </div>
+
+        <div class="setting-group">
           <h3>Glassmorphism</h3>
           <p class="setting-desc">Turn panels, dialogs, widgets and the dock into translucent glass so the ambient colour shows through.</p>
           <div class="seg" id="surfaceSeg">

@@ -218,7 +218,7 @@ def static_checks():
     focus_used = len(re.findall(r"var\(--focus-ring\)", css)) >= 5
     add("P. MYNT theme", "P12 Focus token", "PASS" if focus_used else "FAIL",
         "focus rings route through --focus-ring")
-    wallpaper_ok = ("wallpaperImage" in js and "data-bg=\"image\"" in css and "wallpaper-layer" in css and "wallpaperAccentFromImage" in js)
+    wallpaper_ok = ("wallpaperImage" in js and "wallpaperBgBlur" in js and "wallpaperAccentFromImage" in js and "data-bg=\"image\"" in css and "--wallpaper-bg-blur" in css)
     add("P. MYNT theme", "P13 Custom wallpapers", "PASS" if wallpaper_ok else "FAIL",
         "local wallpaper picker drives the accent mood")
     tracker_frame = all(t in css for t in (".sheet-frame", ".sheet-fade", ".sheet-frame.at-end")) and "updateSheetScrollState" in js

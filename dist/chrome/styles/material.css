@@ -249,6 +249,7 @@ html[data-bg="image"] .ambient .wallpaper-layer {
   background-position: center;
   background-repeat: no-repeat;
   opacity: 1;
+  filter: blur(var(--wallpaper-bg-blur, 0px));
 }
 
 /* ---------------- app shell ---------------- */

@@ -1,8 +1,8 @@
 # UI audit report
 
-Generated: 2026-11-13 11:32
+Generated: 2026-11-13 11:52
 
-**Checks:** 63 · PASS 63 · FAIL 0 · WARN 0 · SKIP 0
+**Checks:** 69 · PASS 69 · FAIL 0 · WARN 0 · SKIP 0
 
 | Section | ID | Result | Detail |
 | --- | --- | --- | --- |
@@ -15,7 +15,7 @@ Generated: 2026-11-13 11:32
 | L. Accessibility | L1 Control names | PASS | all buttons named |
 | L. Accessibility | L3 h1 per panel | PASS | all panels have h1 |
 | J. Settings | J3/J4 No dead drag UI | PASS | clean |
-| A. App shell | A6 CSS balance | PASS | braces 795 / 795 |
+| A. App shell | A6 CSS balance | PASS | braces 798 / 798 |
 | A. App shell | A7 JS balance | PASS | balanced |
 | H. Google apps popup | H1 Anchored popup | PASS | anchored to #appsBtn with a transparent backdrop |
 | D. Home dashboard | D6 Overdue tag | PASS | visible Overdue tag next to late tasks |
@@ -26,6 +26,12 @@ Generated: 2026-11-13 11:32
 | M. Motion & states | M6 Pomodoro persistence | PASS | running timer restores from an end timestamp |
 | O. Tracker & review | O2/O4 Overrides + frozen columns | PASS | computed-cell overrides reset with ↺; identity columns are sticky |
 | L. Accessibility | L6 System font stack | PASS | no reference to an unbundled Inter face |
+| L. Accessibility | L7 Narrow-screen nav names | PASS | section buttons keep aria-label and expose aria-current when the rail labels hide |
+| L. Accessibility | L8 Closed panel inert | PASS | the off-screen bookmarks panel is inert until opened |
+| L. Accessibility | L9 Decorative favicon letters | PASS | letter fallbacks are hidden so links read as their label, not "G Google" |
+| D. Home dashboard | D8 Next-exam chip | PASS | the hero shows the next upcoming exam and its countdown |
+| M. Motion & states | M7 Tab-strip countdown | PASS | document.title shows the remaining time while a session runs |
+| M. Motion & states | M8 Focus after actions | PASS | checking/deleting tasks and editing event dates keeps keyboard focus in place |
 | O. Tracker & review | O6 Bookmark star pin | PASS | star hit area is contained and URLs match through dockMatch() |
 | P. MYNT theme | P1 Tonal palettes | PASS | eleven tonal palettes with six roles drive --mynt-* and --md-* tokens |
 | P. MYNT theme | P2 Poppins bundle | PASS | bundled Poppins with OFL licence and local @font-face |

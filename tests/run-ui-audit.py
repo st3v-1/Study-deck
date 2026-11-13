@@ -166,6 +166,25 @@ def static_checks():
         "computed-cell overrides reset with ↺; identity columns are sticky")
     add("L. Accessibility", "L6 System font stack", "PASS" if "font-family=\"Inter\"" not in js and '"Inter"' not in css else "FAIL",
         "no reference to an unbundled Inter face")
+    nav_named = len(re.findall(r'data-tab="[^"]+"[^>]*aria-label="', html)) == 5
+    nav_current = 'aria-current="page"' in html and 'setAttribute("aria-current", "page")' in js
+    add("L. Accessibility", "L7 Narrow-screen nav names", "PASS" if nav_named and nav_current else "FAIL",
+        "section buttons keep aria-label and expose aria-current when the rail labels hide")
+    inert_closed = re.search(r'<aside class="bookmarks-panel"[^>]*aria-hidden="true"[^>]*inert', html) is not None
+    add("L. Accessibility", "L8 Closed panel inert", "PASS" if inert_closed and 'removeAttribute("inert")' in js else "FAIL",
+        "the off-screen bookmarks panel is inert until opened")
+    decorated = js.count('letter.setAttribute("aria-hidden", "true")') >= 5
+    add("L. Accessibility", "L9 Decorative favicon letters", "PASS" if decorated else "FAIL",
+        "letter fallbacks are hidden so links read as their label, not \"G Google\"")
+    add("D. Home dashboard", "D8 Next-exam chip", "PASS"
+        if 'id="homeNextExam"' in html and "updateHomeNextExam" in js and ".home-next-exam" in css else "FAIL",
+        "the hero shows the next upcoming exam and its countdown")
+    add("M. Motion & states", "M7 Tab-strip countdown", "PASS"
+        if "docTitle" in js and "pomo.running" in js else "FAIL",
+        "document.title shows the remaining time while a session runs")
+    add("M. Motion & states", "M8 Focus after actions", "PASS"
+        if "focusTodoControl" in js and "restoreFocus" in js and "Update in place" in js else "FAIL",
+        "checking/deleting tasks and editing event dates keeps keyboard focus in place")
 
     # Bookmark star pins to dock in both engines
     star_pos = re.search(r"\.bm-star\s*\{[^}]*position:\s*relative", css)

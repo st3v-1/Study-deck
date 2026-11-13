@@ -16,7 +16,8 @@ Works as a **Chrome / Edge / Brave** extension and as a **Firefox** extension.
 - **To-do log** grouped by date, with optional reminder times and a visible
   overdue tag. Deleting a task, note, event or tracker row offers **Undo**.
 - **Home dashboard** with a large clock, Google search, today’s task list, a
-  focus-timer card, quick links from your dock, and a dated greeting.
+  focus-timer card, quick links from your dock, a dated greeting, and a
+  next-exam countdown chip fed by the planner.
 - **Mock test tracker** with per-section marks, totals, accuracy, percentile and
   a marks-trend chart. Computed cells accept manual overrides, and a ↺ button
   restores the calculated value. S.No and Mock Name stay frozen while the sheet
@@ -73,7 +74,9 @@ Works as a **Chrome / Edge / Brave** extension and as a **Firefox** extension.
 > **Why two manifests?** Chrome MV3 requires `background.service_worker`, while
 > Firefox MV3 uses `background.scripts` (an event page) and needs a Gecko add-on
 > ID. `build.sh` copies the right manifest into each build folder, so you never
-> load the wrong one.
+> load the wrong one. The Firefox build targets Firefox **142 or newer**, because
+> that is the first release that supports the required data-collection
+> declaration on both desktop and Android.
 
 Temporary Firefox add-ons are removed when the browser restarts. For a permanent
 install, package `dist/study-deck-firefox.zip` and sign it through
@@ -191,7 +194,7 @@ study-deck-extension/
 │   ├── theme-init.js        # Applies theme before first paint
 │   ├── storage.js           # Extension storage + chunked sync + localStorage fallback
 │   └── app.js               # All dashboard logic
-├── fonts/                   # Bundled Poppins Regular + OFL licence
+├── fonts/                   # Bundled Poppins Regular/Medium/SemiBold/Bold + OFL licence
 ├── icons/                   # Extension icons
 ├── tests/
 │   ├── ui-test.html         # UI / design test harness
@@ -208,7 +211,7 @@ study-deck-extension/
 | --- | --- |
 | `storage` | Save tasks, notes, tracker data and settings; optional `storage.sync` |
 | `bookmarks` | Show and search the browser's bookmarks in the Bookmarks panel |
-| `favicon` | Load site favicons through the browser's local `_favicon` service |
+| `favicon` | Load site favicons through Chrome's local `_favicon` service (Chrome/Edge only; the Firefox build uses public icon services) |
 
 Study Deck does not read page history, inject scripts into websites, or send
 your study data anywhere. Dock and bookmark favicons use the browser's local

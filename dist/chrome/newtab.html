@@ -131,23 +131,23 @@
     </div>
 
     <nav class="rail-nav" id="tabbar" aria-label="Sections">
-      <button type="button" class="rail-item active" data-tab="home">
+      <button type="button" class="rail-item active" data-tab="home" aria-label="Home" aria-current="page">
         <span class="rail-icon-wrap"><svg class="icon"><use href="#i-home"></use></svg></span>
         <span class="rail-label">Home</span>
       </button>
-      <button type="button" class="rail-item" data-tab="todo">
+      <button type="button" class="rail-item" data-tab="todo" aria-label="To-do">
         <span class="rail-icon-wrap"><svg class="icon"><use href="#i-todo"></use></svg></span>
         <span class="rail-label">To-do</span>
       </button>
-      <button type="button" class="rail-item" data-tab="tracker">
+      <button type="button" class="rail-item" data-tab="tracker" aria-label="Tracker">
         <span class="rail-icon-wrap"><svg class="icon"><use href="#i-chart"></use></svg></span>
         <span class="rail-label">Tracker</span>
       </button>
-      <button type="button" class="rail-item" data-tab="planner">
+      <button type="button" class="rail-item" data-tab="planner" aria-label="Planner">
         <span class="rail-icon-wrap"><svg class="icon"><use href="#i-calendar"></use></svg></span>
         <span class="rail-label">Planner</span>
       </button>
-      <button type="button" class="rail-item" data-tab="review">
+      <button type="button" class="rail-item" data-tab="review" aria-label="Review">
         <span class="rail-icon-wrap"><svg class="icon"><use href="#i-insights"></use></svg></span>
         <span class="rail-label">Review</span>
       </button>
@@ -195,11 +195,11 @@
           </details>
       </div>
 
-      <button type="button" class="rail-item rail-small" id="themeToggle" title="Toggle light / dark theme">
+      <button type="button" class="rail-item rail-small" id="themeToggle" title="Toggle light / dark theme" aria-label="Toggle light or dark theme">
         <span class="rail-icon-wrap"><svg class="icon"><use href="#i-sun"></use></svg></span>
         <span class="rail-label">Theme</span>
       </button>
-      <button type="button" class="rail-item rail-small" id="railSettingsBtn" title="Customize Study Deck">
+      <button type="button" class="rail-item rail-small" id="railSettingsBtn" title="Customize Study Deck" aria-label="Customize Study Deck">
         <span class="rail-icon-wrap"><svg class="icon"><use href="#i-settings"></use></svg></span>
         <span class="rail-label">Settings</span>
       </button>
@@ -217,6 +217,10 @@
                 <span class="eyebrow"><svg class="icon"><use href="#i-sparkle"></use></svg> <span id="homeDaypart">Today</span></span>
                 <h1 id="homeGreeting">Welcome back</h1>
                 <p class="sub" id="homeSummary">Your day at a glance.</p>
+                <div class="home-next-exam" id="homeNextExam" hidden>
+                  <svg class="icon" aria-hidden="true"><use href="#i-calendar"></use></svg>
+                  <span id="homeNextExamText"></span>
+                </div>
               </div>
               <div class="clock home-clock" id="homeClock" data-style="digital">
                 <div class="clock-time">—</div>
@@ -505,7 +509,7 @@
 
 <!-- ================= BOOKMARKS ================= -->
 <div class="scrim" id="scrim" hidden></div>
-<aside class="bookmarks-panel" id="bookmarksPanel" aria-label="Bookmarks" aria-hidden="true">
+<aside class="bookmarks-panel" id="bookmarksPanel" aria-label="Bookmarks" aria-hidden="true" inert>
   <header class="sheet-head">
     <div>
       <span class="eyebrow">Browser</span>

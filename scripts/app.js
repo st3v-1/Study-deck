@@ -226,9 +226,11 @@
   function uid() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
-  function todayStr() {
-    const d = new Date();
+  function localDateKey(d) {
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function todayStr() {
+    return localDateKey(new Date());
   }
   function daysAgoStr(n) {
     const d = new Date();
@@ -1257,7 +1259,12 @@
   /* ---------------- tabs ---------------- */
 
   function selectTab(name) {
-    $$("#tabbar button[data-tab]").forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
+    $$("#tabbar button[data-tab]").forEach((b) => {
+      const active = b.dataset.tab === name;
+      b.classList.toggle("active", active);
+      if (active) b.setAttribute("aria-current", "page");
+      else b.removeAttribute("aria-current");
+    });
     $$(".tab-panel").forEach((p) => p.classList.toggle("active", p.dataset.panel === name));
     if (name === "review") renderReview();
     if (name === "home") renderHome();
@@ -1322,6 +1329,7 @@
       avatar.style.setProperty("--app-color", app.color);
       avatar.style.setProperty("--app-ink", ["#FBBC04", "#F4B400"].includes(app.color) ? "#332A00" : "#fff");
       const letter = document.createElement("span");
+      letter.setAttribute("aria-hidden", "true");
       letter.textContent = app.letter;
       avatar.appendChild(letter);
       attachFavicon(avatar, app.url, 64, letter);
@@ -1393,6 +1401,7 @@
       icon.className = "dock-icon";
       const letter = document.createElement("span");
       letter.className = "dock-letter";
+      letter.setAttribute("aria-hidden", "true");
       letter.textContent = firstLetter(item.title);
       icon.appendChild(letter);
       attachFavicon(icon, item.url, 128, letter);
@@ -1534,6 +1543,7 @@
       const icon = document.createElement("span");
       icon.className = "dock-setting-icon";
       const letter = document.createElement("span");
+      letter.setAttribute("aria-hidden", "true");
       letter.textContent = firstLetter(item.title);
       icon.appendChild(letter);
       attachFavicon(icon, item.url, 64, letter);
@@ -1704,6 +1714,7 @@
       const fav = document.createElement("span");
       fav.className = "bm-fav";
       const letter = document.createElement("span");
+      letter.setAttribute("aria-hidden", "true");
       letter.textContent = firstLetter(bm.title || hostOf(bm.url));
       fav.appendChild(letter);
       attachFavicon(fav, bm.url, 64, letter);
@@ -1910,13 +1921,27 @@
     return hm[0] * 60 + hm[1] < now.getHours() * 60 + now.getMinutes();
   }
 
-  function renderTodos() {
+  function focusTodoControl(scope, id, act) {
+    const target = document.querySelector(scope + ' [data-id="' + id + '"] [data-act="' + act + '"]');
+    if (target) { target.focus(); return true; }
+    return false;
+  }
+
+  function renderTodos(focus) {
     renderHomeTasks();
     updateHomeGreeting();
     const host = todoListEl();
     host.replaceChildren();
+    const restoreFocus = () => {
+      if (!focus) return;
+      const scope = focus.home ? "#homeTaskList" : "#todoList";
+      if (focusTodoControl(scope, focus.id, focus.act)) return;
+      const fallback = focus.home ? $("#homeTaskInput") : $("#todoInput");
+      if (fallback) fallback.focus();
+    };
     if (todos.length === 0) {
       host.replaceChildren(makeEl("div", "empty-state", "Nothing logged yet. Add your first task above."));
+      restoreFocus();
       return;
     }
     const groups = {};
@@ -1957,12 +1982,14 @@
       items.forEach((t) => {
         const li = document.createElement("li");
         li.className = "todo-item" + (t.done ? " done" : "");
+        li.dataset.id = t.id;
         const overdue = isTaskOverdue(t);
         if (overdue) li.classList.add("overdue");
 
         const check = document.createElement("button");
         check.type = "button";
         check.className = "check";
+        check.dataset.act = "check";
         check.setAttribute("aria-label", t.done ? "Mark as not done" : "Mark as done");
         check.textContent = t.done ? "✓" : "";
 
@@ -1986,21 +2013,23 @@
         const del = document.createElement("button");
         del.type = "button";
         del.className = "del-btn";
+        del.dataset.act = "del";
         del.title = "Delete task";
+        del.setAttribute("aria-label", "Delete task");
         del.textContent = "×";
         li.appendChild(del);
 
         check.addEventListener("click", () => {
           t.done = !t.done;
           persist("todos-list", todos);
-          renderTodos();
+          renderTodos({ id: t.id, act: "check", home: false });
         });
         del.addEventListener("click", () => {
           const index = todos.findIndex((x) => x.id === t.id);
           if (index < 0) return;
           const [removed] = todos.splice(index, 1);
           persist("todos-list", todos);
-          renderTodos();
+          renderTodos({ id: t.id, act: "del", home: false });
           undoToast("Task deleted.", () => {
             todos.splice(Math.min(index, todos.length), 0, removed);
             persist("todos-list", todos);
@@ -2013,6 +2042,7 @@
       groupEl.appendChild(ul);
       host.appendChild(groupEl);
     });
+    restoreFocus();
   }
 
   function addTodo() {
@@ -2092,6 +2122,27 @@
     else parts.push(left + " task" + (left === 1 ? "" : "s") + " left");
     if (pomo.sessionsToday) parts.push(pomo.sessionsToday + " focus session" + (pomo.sessionsToday === 1 ? "" : "s") + " today");
     summaryEl.textContent = parts.join(" · ");
+    updateHomeNextExam();
+  }
+
+  function updateHomeNextExam() {
+    const chip = $("#homeNextExam");
+    const text = $("#homeNextExamText");
+    if (!chip || !text) return;
+    const today = todayStr();
+    const upcoming = events
+      .filter((e) => e && e.date && e.date >= today)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    if (!upcoming.length) {
+      chip.hidden = true;
+      text.textContent = "";
+      return;
+    }
+    const next = upcoming[0];
+    const days = daysDiffFromToday(next.date);
+    const when = days === 0 ? "today" : days + (days === 1 ? " day" : " days");
+    text.textContent = "Next exam: " + next.title + " · " + when;
+    chip.hidden = false;
   }
 
   function renderHomeTasks() {
@@ -2117,10 +2168,12 @@
     items.forEach((t) => {
       const li = document.createElement("li");
       li.className = "home-task-item" + (t.done ? " done" : "");
+      li.dataset.id = t.id;
 
       const check = document.createElement("button");
       check.type = "button";
       check.className = "check";
+      check.dataset.act = "check";
       check.setAttribute("aria-label", t.done ? "Mark as not done" : "Mark as done");
       check.textContent = t.done ? "✓" : "";
 
@@ -2131,6 +2184,7 @@
       const del = document.createElement("button");
       del.type = "button";
       del.className = "del-btn";
+      del.dataset.act = "del";
       del.title = "Delete task";
       del.setAttribute("aria-label", "Delete task");
       del.textContent = "×";
@@ -2154,14 +2208,14 @@
       check.addEventListener("click", () => {
         t.done = !t.done;
         persist("todos-list", todos);
-        renderTodos();
+        renderTodos({ id: t.id, act: "check", home: true });
       });
       del.addEventListener("click", () => {
         const index = todos.findIndex((x) => x.id === t.id);
         if (index < 0) return;
         const [removed] = todos.splice(index, 1);
         persist("todos-list", todos);
-        renderTodos();
+        renderTodos({ id: t.id, act: "del", home: true });
         undoToast("Task deleted.", () => {
           todos.splice(Math.min(index, todos.length), 0, removed);
           persist("todos-list", todos);
@@ -2190,6 +2244,7 @@
       mark.className = "home-link-mark";
       const letter = document.createElement("span");
       letter.className = "home-link-letter";
+      letter.setAttribute("aria-hidden", "true");
       letter.textContent = firstLetter(item.title);
       mark.appendChild(letter);
       attachFavicon(mark, item.url, 64, letter);
@@ -2292,6 +2347,10 @@
         const [removed] = notes.splice(index, 1);
         persist("notes-list", notes);
         renderNotes();
+        const nextNote = $("#notesList .del-btn");
+        const noteFallback = $("#noteBody");
+        if (nextNote) nextNote.focus();
+        else if (noteFallback) noteFallback.focus();
         undoToast("Note deleted.", () => {
           notes.splice(Math.min(index, notes.length), 0, removed);
           persist("notes-list", notes);
@@ -2398,6 +2457,11 @@
     $("#pomoStart").textContent = pomo.running ? "Pause" : "Start";
     $$(".mode-btn").forEach((b) => b.classList.toggle("active", b.dataset.mode === pomo.mode));
     $("#pomoTrigger").classList.toggle("running", pomo.running);
+    /* Surface the countdown in the tab strip while a session runs. */
+    const docTitle = pomo.running
+      ? timeStr + " · " + shortLabelMap[pomo.mode] + " — Study Deck"
+      : "Study Deck";
+    if (document.title !== docTitle) document.title = docTitle;
     updateHomePomo();
   }
 
@@ -2845,6 +2909,8 @@
         const [removed] = list.splice(index, 1);
         persistSoon("mocktests-data", mockData, 0);
         renderSheet();
+        const addRow = $("#addRowBtn");
+        if (addRow) addRow.focus();
         undoToast("Test row deleted.", () => {
           mockData[category].splice(Math.min(index, mockData[category].length), 0, removed);
           persistSoon("mocktests-data", mockData, 0);
@@ -2989,9 +3055,18 @@
 
       [title, date].forEach((inp) => {
         inp.addEventListener("change", (e) => {
-          ev[e.target.dataset.f] = e.target.value;
+          const field = e.target.dataset.f;
+          ev[field] = e.target.value;
           persist("calendar-events", events);
-          renderCalendar();
+          /* Update in place: a full re-render would drop keyboard focus after
+             editing a date, making the next Tab jump back to the page top. */
+          if (field === "date") {
+            const diff = daysDiffFromToday(ev.date);
+            if (diff > 0) { badge.className = "event-badge upcoming"; badge.textContent = diff + " day" + (diff === 1 ? "" : "s") + " left"; }
+            else if (diff === 0) { badge.className = "event-badge today"; badge.textContent = "Today"; }
+            else { const past = Math.abs(diff); badge.className = "event-badge past"; badge.textContent = past + " day" + (past === 1 ? "" : "s") + " past"; }
+          }
+          renderMonthGrid();
         });
       });
       del.addEventListener("click", () => {
@@ -3000,6 +3075,10 @@
         const [removed] = events.splice(index, 1);
         persist("calendar-events", events);
         renderCalendar();
+        const nextItem = host.querySelector(".event-item input[data-f='title']");
+        const fallback = $("#eventTitleInput");
+        if (nextItem) nextItem.focus();
+        else if (fallback) fallback.focus();
         undoToast("Event deleted.", () => {
           events.splice(Math.min(index, events.length), 0, removed);
           persist("calendar-events", events);
@@ -3011,6 +3090,7 @@
       host.appendChild(row);
     });
     renderMonthGrid();
+    updateHomeNextExam();
   }
 
   function renderMonthGrid() {
@@ -3200,7 +3280,9 @@
     const doneCount = weekTodos.filter((t) => t.done).length;
     const weekLog = pomoLog.filter((l) => weekDates.includes(l.date));
     const weekMinutes = weekLog.reduce((a, b) => a + b.minutes, 0);
-    const weekNotes = notes.filter((n) => weekDates.includes(new Date(n.createdAt).toISOString().slice(0, 10)));
+    /* Count notes by the same local calendar day used for tasks and focus
+       sessions; toISOString() would shift midnight–05:30 IST notes backwards. */
+    const weekNotes = notes.filter((n) => weekDates.includes(localDateKey(new Date(n.createdAt))));
     let weekTests = 0;
     CATEGORIES.forEach((c) => {
       weekTests += (mockData[c] || []).filter((r) => weekDates.includes(r.date)).length;
@@ -3678,7 +3760,15 @@
 
     /* todos */
     $("#addTodoBtn").addEventListener("click", addTodo);
-    $("#todoInput").addEventListener("keydown", (e) => { if (e.key === "Enter") addTodo(); });
+    ["#todoInput", "#todoDate", "#todoTime"].forEach((sel) => {
+      const field = $(sel);
+      if (field) field.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          addTodo();
+        }
+      });
+    });
 
     /* notes */
     $("#addNoteBtn").addEventListener("click", addNote);

@@ -25,6 +25,7 @@
     dockNewTab: true,
     dockSize: 58,
     myntIcons: true,
+    monochromeIcons: false,
     clockStyle: "analog",
     clockSeconds: true,
     clockShowDate: true,
@@ -287,6 +288,7 @@
     if (!ENGINES[s.engine]) s.engine = "google";
     s.dockSize = clamp(Number(s.dockSize) || 58, 44, 76);
     s.myntIcons = s.myntIcons !== false;
+    s.monochromeIcons = s.monochromeIcons === true;
     if (!CLOCK_STYLES[s.clockStyle]) s.clockStyle = "digital";
     if (!["solid", "glass", "frosted"].includes(s.surfaceStyle)) s.surfaceStyle = "glass";
     s.glassStrength = clamp(Number(s.glassStrength) || 62, 20, 100);
@@ -687,6 +689,7 @@
     rootEl.setAttribute("data-density", settings.compact ? "compact" : "comfortable");
     rootEl.setAttribute("data-motion", settings.animations ? "on" : "off");
     rootEl.setAttribute("data-icons", settings.myntIcons === false ? "classic" : "mynt");
+    rootEl.setAttribute("data-icon-tint", settings.monochromeIcons ? "mono" : "color");
     rootEl.setAttribute("data-home-layout", settings.homeLayout);
     rootEl.style.setProperty("--dock-size", settings.dockSize + "px");
 

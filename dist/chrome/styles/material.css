@@ -3256,3 +3256,38 @@ html[data-motion="off"][data-icons="mynt"] .app-tile {
   html[data-icons="mynt"] .dock-item,
   html[data-icons="mynt"] .app-tile { animation: none; }
 }
+
+/* ---------------- Monochrome icon tint ----------------
+   Settings → Dock → Monochrome icons. Site favicons become single-colour
+   glyphs on neutral tiles: dark glyphs in light mode, light glyphs in dark
+   mode, so the dock/apps/bookmarks stay legible in both themes. */
+
+html[data-icon-tint="mono"] .dock-icon,
+html[data-icon-tint="mono"] .app-avatar,
+html[data-icon-tint="mono"] .dock-setting-icon,
+html[data-icon-tint="mono"] .bm-fav,
+html[data-icon-tint="mono"] .home-link-mark {
+  background: color-mix(in srgb, var(--md-on-surface) 7%, var(--md-surface-container-high));
+  border: 1px solid color-mix(in srgb, var(--md-on-surface) 10%, transparent);
+  color: var(--md-on-surface);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent);
+}
+html[data-icon-tint="mono"] .dock-icon img,
+html[data-icon-tint="mono"] .app-avatar img,
+html[data-icon-tint="mono"] .dock-setting-icon img,
+html[data-icon-tint="mono"] .bm-fav img,
+html[data-icon-tint="mono"] .home-link-mark img {
+  filter: grayscale(1) brightness(0) opacity(0.8);
+}
+html[data-theme="dark"][data-icon-tint="mono"] .dock-icon img,
+html[data-theme="dark"][data-icon-tint="mono"] .app-avatar img,
+html[data-theme="dark"][data-icon-tint="mono"] .dock-setting-icon img,
+html[data-theme="dark"][data-icon-tint="mono"] .bm-fav img,
+html[data-theme="dark"][data-icon-tint="mono"] .home-link-mark img {
+  filter: grayscale(1) brightness(0) invert(1) opacity(0.9);
+}
+html[data-icon-tint="mono"] .dock-letter,
+html[data-icon-tint="mono"] .app-avatar,
+html[data-icon-tint="mono"] .home-link-letter {
+  color: var(--md-on-surface);
+}

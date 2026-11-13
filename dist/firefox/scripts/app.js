@@ -24,6 +24,7 @@
     dockMagnify: true,
     dockNewTab: true,
     dockSize: 58,
+    myntIcons: true,
     clockStyle: "analog",
     clockSeconds: true,
     clockShowDate: true,
@@ -285,6 +286,7 @@
     s.wallpaperPalette = Array.isArray(s.wallpaperPalette) ? s.wallpaperPalette.filter((c) => typeof c === "string") : [];
     if (!ENGINES[s.engine]) s.engine = "google";
     s.dockSize = clamp(Number(s.dockSize) || 58, 44, 76);
+    s.myntIcons = s.myntIcons !== false;
     if (!CLOCK_STYLES[s.clockStyle]) s.clockStyle = "digital";
     if (!["solid", "glass", "frosted"].includes(s.surfaceStyle)) s.surfaceStyle = "glass";
     s.glassStrength = clamp(Number(s.glassStrength) || 62, 20, 100);
@@ -684,6 +686,7 @@
     rootEl.setAttribute("data-bg", settings.background);
     rootEl.setAttribute("data-density", settings.compact ? "compact" : "comfortable");
     rootEl.setAttribute("data-motion", settings.animations ? "on" : "off");
+    rootEl.setAttribute("data-icons", settings.myntIcons === false ? "classic" : "mynt");
     rootEl.setAttribute("data-home-layout", settings.homeLayout);
     rootEl.style.setProperty("--dock-size", settings.dockSize + "px");
 
@@ -1162,16 +1165,17 @@
     const grid = $("#appsGrid");
     if (!grid) return;
     grid.innerHTML = "";
-    GOOGLE_APPS.forEach((app) => {
+    GOOGLE_APPS.forEach((app, idx) => {
       const a = document.createElement("a");
       a.className = "app-tile";
       a.href = app.url;
       a.target = "_blank";
       a.rel = "noopener noreferrer";
+      a.style.setProperty("--i", String(idx));
       const avatar = document.createElement("span");
       avatar.className = "app-avatar";
-      avatar.style.background = app.color;
-      avatar.style.color = ["#FBBC04", "#F4B400"].includes(app.color) ? "#332A00" : "#fff";
+      avatar.style.setProperty("--app-color", app.color);
+      avatar.style.setProperty("--app-ink", ["#FBBC04", "#F4B400"].includes(app.color) ? "#332A00" : "#fff");
       const letter = document.createElement("span");
       letter.textContent = app.letter;
       avatar.appendChild(letter);
@@ -1231,13 +1235,14 @@
     dock.innerHTML = "";
     if (!settings.showDock) { applyWidgetLayout(); return; }
 
-    dockItems.forEach((item) => {
+    dockItems.forEach((item, idx) => {
       const a = document.createElement("a");
       a.className = "dock-item";
       a.href = item.url;
       a.title = item.title;
       a.target = settings.dockNewTab ? "_blank" : "_self";
       a.rel = "noopener noreferrer";
+      a.style.setProperty("--i", String(idx));
 
       const icon = document.createElement("span");
       icon.className = "dock-icon";
@@ -2350,14 +2355,36 @@
   /* ---------------- mock test tracker ---------------- */
 
   async function initTracker() {
-    mockData = await store.load("mocktests-data", {});
-    if (!mockData || typeof mockData !== "object") mockData = {};
+    const stored = await store.load("mocktests-data", null);
+    mockData = stored && typeof stored === "object" ? stored : {};
     CATEGORIES.forEach((c) => { if (!Array.isArray(mockData[c])) mockData[c] = []; });
+
+    /* A blank sheet opens with three empty rows so the table is immediately
+       ready to type into instead of showing only an empty state. */
+    const sheetIsBlank = CATEGORIES.every((c) => mockData[c].length === 0);
+    if (sheetIsBlank) {
+      CATEGORIES.forEach((c) => {
+        mockData[c] = [blankRow(), blankRow(), blankRow()];
+      });
+      persist("mocktests-data", mockData);
+    }
+
     const scroller = $("#sheetScroll");
     if (scroller && !scroller.dataset.bound) {
       scroller.dataset.bound = "1";
       scroller.addEventListener("scroll", updateSheetScrollState, { passive: true });
       window.addEventListener("resize", updateSheetScrollState);
+    }
+    const hint = $("#sheetHint");
+    if (hint && !hint.dataset.bound) {
+      hint.dataset.bound = "1";
+      hint.addEventListener("click", () => {
+        const box = $("#sheetScroll");
+        if (!box) return;
+        const max = box.scrollWidth - box.clientWidth;
+        const step = Math.max(240, Math.round(box.clientWidth * 0.75));
+        box.scrollTo({ left: Math.min(max, box.scrollLeft + step), behavior: "smooth" });
+      });
     }
     renderSheetTabs();
     renderSheetHead();

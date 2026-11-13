@@ -221,9 +221,18 @@ def static_checks():
     wallpaper_ok = ("wallpaperImage" in js and "wallpaperBgBlur" in js and "wallpaperAccentFromImage" in js and "data-bg=\"image\"" in css and "--wallpaper-bg-blur" in css)
     add("P. MYNT theme", "P13 Custom wallpapers", "PASS" if wallpaper_ok else "FAIL",
         "local wallpaper picker drives the accent mood")
-    tracker_frame = all(t in css for t in (".sheet-frame", ".sheet-fade", ".sheet-frame.at-end")) and "updateSheetScrollState" in js
+    tracker_frame = (all(t in css for t in (".sheet-frame", ".sheet-fade", ".sheet-frame.at-end"))
+                     and "updateSheetScrollState" in js
+                     and 'id="sheetHint"' in html and "hint.addEventListener(\"click\"" in js)
     add("O. Tracker & review", "O7 Tracker scroll affordance", "PASS" if tracker_frame else "FAIL",
-        "sticky identity columns, edge fade and hint retire at the last column")
+        "sticky identity columns, edge fade and a working Scroll → button")
+    mynt_icons = ("myntIcons" in js and 'data-icons="mynt"' in css and 'data-setting="myntIcons"' in html
+                  and "mynt-dock-in" in css and "mynt-tile-in" in css and "--app-color" in js)
+    add("P. MYNT theme", "P14 MYNT dock icon style", "PASS" if mynt_icons else "FAIL",
+        "toggle swaps dock + Google apps to rounded tonal tiles with springy motion")
+    tracker_seed = "sheetIsBlank" in js and "blankRow(), blankRow(), blankRow()" in js
+    add("O. Tracker & review", "O8 Blank rows on first run", "PASS" if tracker_seed else "FAIL",
+        "a blank tracker sheet starts with three empty rows")
 
     # Manifests + ZIPs + dist sync
     for manifest in ("dist/chrome/manifest.json", "dist/firefox/manifest.json"):

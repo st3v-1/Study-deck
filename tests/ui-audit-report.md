@@ -1,8 +1,8 @@
 # UI audit report
 
-Generated: 2026-11-12 18:08
+Generated: 2026-11-13 10:36
 
-**Checks:** 60 · PASS 60 · FAIL 0 · WARN 0 · SKIP 0
+**Checks:** 62 · PASS 62 · FAIL 0 · WARN 0 · SKIP 0
 
 | Section | ID | Result | Detail |
 | --- | --- | --- | --- |
@@ -15,7 +15,7 @@ Generated: 2026-11-12 18:08
 | L. Accessibility | L1 Control names | PASS | all buttons named |
 | L. Accessibility | L3 h1 per panel | PASS | all panels have h1 |
 | J. Settings | J3/J4 No dead drag UI | PASS | clean |
-| A. App shell | A6 CSS balance | PASS | braces 760 / 760 |
+| A. App shell | A6 CSS balance | PASS | braces 788 / 788 |
 | A. App shell | A7 JS balance | PASS | balanced |
 | H. Google apps popup | H1 Anchored popup | PASS | anchored to #appsBtn with a transparent backdrop |
 | D. Home dashboard | D6 Overdue tag | PASS | visible Overdue tag next to late tasks |
@@ -40,7 +40,9 @@ Generated: 2026-11-12 18:08
 | P. MYNT theme | P11 Real font weights | PASS | Poppins 500/600/700 bundled, no faux bold |
 | P. MYNT theme | P12 Focus token | PASS | focus rings route through --focus-ring |
 | P. MYNT theme | P13 Custom wallpapers | PASS | local wallpaper picker drives the accent mood |
-| O. Tracker & review | O7 Tracker scroll affordance | PASS | sticky identity columns, edge fade and hint retire at the last column |
+| O. Tracker & review | O7 Tracker scroll affordance | PASS | sticky identity columns, edge fade and a working Scroll → button |
+| P. MYNT theme | P14 MYNT dock icon style | PASS | toggle swaps dock + Google apps to rounded tonal tiles with springy motion |
+| O. Tracker & review | O8 Blank rows on first run | PASS | a blank tracker sheet starts with three empty rows |
 | N. Data & sync | N0 Manifest chrome | PASS | valid JSON |
 | N. Data & sync | N0 Manifest firefox | PASS | valid JSON |
 | N. Data & sync | N0 ZIP study-deck-chrome.zip | PASS | integrity ok |

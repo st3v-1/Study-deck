@@ -272,7 +272,7 @@
               </table>
             </div>
             <div class="sheet-fade" aria-hidden="true"></div>
-            <span class="sheet-hint" id="sheetHint" aria-hidden="true">Scroll&#8202;→</span>
+            <button type="button" class="sheet-hint" id="sheetHint" aria-label="Scroll tracker table to the right">Scroll&#8202;→</button>
           </div>
           <div id="sheetEmpty" class="empty-state" hidden>No tests logged in this sheet yet — click “Add row” to start.</div>
           <div class="trend-wrap">
@@ -734,6 +734,10 @@
             <span class="setting-copy"><span class="setting-title">Icon size</span><span class="setting-desc">Adjust the dock icon size.</span></span>
             <input type="range" min="44" max="76" step="2" data-setting="dockSize" class="range" aria-label="Dock icon size">
           </div>
+          <label class="setting-row">
+            <span class="setting-copy"><span class="setting-title">MYNT icon style</span><span class="setting-desc">Rounded tonal tiles, brand-tinted icons and springy hover/entrance animation for the dock and Google apps. Turn off for the classic look.</span></span>
+            <span class="switch"><input type="checkbox" data-setting="myntIcons"><span class="track"></span><span class="thumb"></span></span>
+          </label>
         </div>
       </section>
 

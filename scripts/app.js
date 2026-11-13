@@ -1268,6 +1268,9 @@
     $$(".tab-panel").forEach((p) => p.classList.toggle("active", p.dataset.panel === name));
     if (name === "review") renderReview();
     if (name === "home") renderHome();
+    /* The sheet is laid out while its panel is hidden, so re-measure once the
+       tracker becomes visible and the scroll buttons can show their real edges. */
+    if (name === "tracker") updateSheetScrollState();
     applyWidgetVisibility();
     applyWidgetLayout();
   }
@@ -2584,31 +2587,48 @@
       scroller.addEventListener("scroll", updateSheetScrollState, { passive: true });
       window.addEventListener("resize", updateSheetScrollState);
     }
-    const hint = $("#sheetHint");
-    if (hint && !hint.dataset.bound) {
-      hint.dataset.bound = "1";
-      hint.addEventListener("click", () => {
+    [["#sheetScrollLeft", -1], ["#sheetScrollRight", 1]].forEach(([selector, direction]) => {
+      const button = $(selector);
+      if (!button || button.dataset.bound) return;
+      button.dataset.bound = "1";
+      button.addEventListener("click", () => {
         const box = $("#sheetScroll");
         if (!box) return;
         const max = box.scrollWidth - box.clientWidth;
         const step = Math.max(240, Math.round(box.clientWidth * 0.75));
-        box.scrollTo({ left: Math.min(max, box.scrollLeft + step), behavior: "smooth" });
+        const left = clamp(box.scrollLeft + direction * step, 0, max);
+        box.scrollTo({ left: left, behavior: "smooth" });
       });
-    }
+    });
     renderSheetTabs();
     renderSheetHead();
     renderSheet();
   }
 
-  /* The wide sheet shows a fade + "Scroll →" hint until the last column is
-     reached, then both retire so they never cover the final inputs. */
+  /* The wide sheet shows a right-edge fade and two direction buttons. Each
+     button disables at its own edge, so left/right always match where the
+     table can actually go. */
   function updateSheetScrollState() {
     requestAnimationFrame(() => {
       const frame = $("#sheetFrame");
       const scroller = $("#sheetScroll");
       if (!frame || !scroller) return;
       const max = scroller.scrollWidth - scroller.clientWidth;
-      frame.classList.toggle("at-end", max <= 4 || scroller.scrollLeft >= max - 4);
+      const atStart = max <= 4 || scroller.scrollLeft <= 4;
+      const atEnd = max <= 4 || scroller.scrollLeft >= max - 4;
+      frame.classList.toggle("at-start", atStart);
+      frame.classList.toggle("at-end", atEnd);
+      frame.classList.toggle("no-scroll", max <= 4);
+      const left = $("#sheetScrollLeft");
+      const right = $("#sheetScrollRight");
+      if (left) {
+        left.disabled = atStart;
+        left.setAttribute("aria-disabled", atStart ? "true" : "false");
+      }
+      if (right) {
+        right.disabled = atEnd;
+        right.setAttribute("aria-disabled", atEnd ? "true" : "false");
+      }
     });
   }
 

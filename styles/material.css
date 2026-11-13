@@ -1368,36 +1368,55 @@ ul.todo-list { display: flex; flex-direction: column; gap: 8px; margin: 0; paddi
 }
 .sheet-frame.at-end .sheet-fade { opacity: 0; }
 .sheet-frame.is-empty { display: none; }
-.sheet-hint {
-  position: absolute;
-  right: 14px;
-  bottom: 12px;
-  z-index: 9;
-  display: inline-flex;
+.sheet-scroll-bar {
+  display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px 12px;
-  border: 1px solid var(--md-outline-variant);
-  border-radius: var(--radius-pill);
-  background: var(--md-surface-container-high);
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--md-outline-variant);
+  background: var(--md-surface-container-low);
+}
+.sheet-scroll-label {
   color: var(--md-on-surface-variant);
-  font-family: var(--font-body);
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  box-shadow: var(--elev-1);
-  transition: opacity var(--state-transition), transform var(--state-transition),
-    background var(--state-transition), color var(--state-transition), border-color var(--state-transition);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
-.sheet-hint:hover {
+.sheet-scroll-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--md-outline-variant);
+  border-radius: 50%;
   background: var(--md-surface-container-highest);
-  border-color: var(--md-outline);
-  color: var(--md-on-surface);
+  color: var(--md-on-surface-variant);
+  cursor: pointer;
+  transition: background var(--state-transition), color var(--state-transition),
+    border-color var(--state-transition), transform var(--state-transition), opacity var(--state-transition);
 }
-.sheet-hint:active { transform: translateY(0) scale(0.97); }
-.sheet-hint:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.sheet-frame.at-end .sheet-hint { opacity: 0; transform: translateY(4px); pointer-events: none; visibility: hidden; }
+/* 40px visual circle with a 44px pointer/touch target. */
+.sheet-scroll-btn::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; }
+.sheet-scroll-btn .icon { width: 20px; height: 20px; }
+.sheet-scroll-btn:hover:not(:disabled) {
+  background: var(--action);
+  border-color: var(--action);
+  color: var(--on-action);
+}
+.sheet-scroll-btn:active:not(:disabled) { transform: scale(0.94); }
+.sheet-scroll-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.sheet-scroll-btn:disabled {
+  opacity: 0.34;
+  cursor: default;
+  box-shadow: none;
+  background: var(--md-surface-container-high);
+}
+.sheet-frame.no-scroll .sheet-scroll-bar { display: none; }
 
 table.sheet { width: 100%; min-width: 1480px; border-collapse: separate; border-spacing: 0; font-size: 12px; }
 table.sheet th {

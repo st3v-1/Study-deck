@@ -240,11 +240,12 @@ def static_checks():
     wallpaper_ok = ("wallpaperImage" in js and "wallpaperBgBlur" in js and "wallpaperAccentFromImage" in js and "data-bg=\"image\"" in css and "--wallpaper-bg-blur" in css)
     add("P. MYNT theme", "P13 Custom wallpapers", "PASS" if wallpaper_ok else "FAIL",
         "local wallpaper picker drives the accent mood")
-    tracker_frame = (all(t in css for t in (".sheet-frame", ".sheet-fade", ".sheet-frame.at-end"))
+    tracker_frame = (all(t in css for t in (".sheet-frame", ".sheet-fade", ".sheet-frame.at-end", ".sheet-scroll-btn"))
                      and "updateSheetScrollState" in js
-                     and 'id="sheetHint"' in html and "hint.addEventListener(\"click\"" in js)
+                     and 'id="sheetScrollLeft"' in html and 'id="sheetScrollRight"' in html
+                     and "direction * step" in js and "left.disabled = atStart" in js)
     add("O. Tracker & review", "O7 Tracker scroll affordance", "PASS" if tracker_frame else "FAIL",
-        "sticky identity columns, edge fade and a working Scroll → button")
+        "sticky identity columns, edge fade and left/right buttons that disable at each end")
     mynt_icons = ("myntIcons" in js and 'data-icons="mynt"' in css and 'data-setting="myntIcons"' in html
                   and "mynt-dock-in" in css and "mynt-tile-in" in css and "--app-color" in js)
     add("P. MYNT theme", "P14 MYNT dock icon style", "PASS" if mynt_icons else "FAIL",
@@ -382,6 +383,7 @@ def visual_checks():
         ("todo-768", dict(active_panel="todo"), 768, 900),
         ("home-390", dict(), 390, 844),
         ("planner-390", dict(active_panel="planner"), 390, 844),
+        ("tracker-390", dict(active_panel="tracker"), 390, 844),
     ]
 
     shots = []

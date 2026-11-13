@@ -21,7 +21,7 @@ Works as a **Chrome / Edge / Brave** extension and as a **Firefox** extension.
 - **Mock test tracker** with per-section marks, totals, accuracy, percentile and
   a marks-trend chart. Computed cells accept manual overrides, and a ↺ button
   restores the calculated value. S.No and Mock Name stay frozen while the sheet
-  scrolls sideways.
+  scrolls sideways, with left/right arrow buttons beneath it.
 - **Planner** tab merging the calendar (exam dates and events with countdown
   badges, plus a per-day event drill-down) and quick notes for capture.
 - **Weekly review** across tasks, focus time, notes and mock tests.

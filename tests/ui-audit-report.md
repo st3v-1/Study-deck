@@ -1,8 +1,8 @@
 # UI audit report
 
-Generated: 2026-11-13 11:52
+Generated: 2026-11-13 12:07
 
-**Checks:** 69 · PASS 69 · FAIL 0 · WARN 0 · SKIP 0
+**Checks:** 70 · PASS 70 · FAIL 0 · WARN 0 · SKIP 0
 
 | Section | ID | Result | Detail |
 | --- | --- | --- | --- |
@@ -15,7 +15,7 @@ Generated: 2026-11-13 11:52
 | L. Accessibility | L1 Control names | PASS | all buttons named |
 | L. Accessibility | L3 h1 per panel | PASS | all panels have h1 |
 | J. Settings | J3/J4 No dead drag UI | PASS | clean |
-| A. App shell | A6 CSS balance | PASS | braces 798 / 798 |
+| A. App shell | A6 CSS balance | PASS | braces 803 / 803 |
 | A. App shell | A7 JS balance | PASS | balanced |
 | H. Google apps popup | H1 Anchored popup | PASS | anchored to #appsBtn with a transparent backdrop |
 | D. Home dashboard | D6 Overdue tag | PASS | visible Overdue tag next to late tasks |
@@ -46,7 +46,7 @@ Generated: 2026-11-13 11:52
 | P. MYNT theme | P11 Real font weights | PASS | Poppins 500/600/700 bundled, no faux bold |
 | P. MYNT theme | P12 Focus token | PASS | focus rings route through --focus-ring |
 | P. MYNT theme | P13 Custom wallpapers | PASS | local wallpaper picker drives the accent mood |
-| O. Tracker & review | O7 Tracker scroll affordance | PASS | sticky identity columns, edge fade and a working Scroll → button |
+| O. Tracker & review | O7 Tracker scroll affordance | PASS | sticky identity columns, edge fade and left/right buttons that disable at each end |
 | P. MYNT theme | P14 MYNT dock icon style | PASS | toggle swaps dock + Google apps to rounded tonal tiles with springy motion |
 | P. MYNT theme | P15 Monochrome icon pack | PASS | bundled Simple Icons (CC0) brand glyphs replace favicons on neutral tonal tiles |
 | O. Tracker & review | O8 Blank rows on first run | PASS | a blank tracker sheet starts with three empty rows |
@@ -75,6 +75,7 @@ Generated: 2026-11-13 11:52
 | Screenshots | S1 todo-768 | PASS | /tmp/opencode/ui-audit/todo-768.png |
 | Screenshots | S1 home-390 | PASS | /tmp/opencode/ui-audit/home-390.png |
 | Screenshots | S1 planner-390 | PASS | /tmp/opencode/ui-audit/planner-390.png |
+| Screenshots | S1 tracker-390 | PASS | /tmp/opencode/ui-audit/tracker-390.png |
 
 ## Screenshots
 
@@ -98,6 +99,7 @@ Generated: 2026-11-13 11:52
 - **todo-768** — `/tmp/opencode/ui-audit/todo-768.png`
 - **home-390** — `/tmp/opencode/ui-audit/home-390.png`
 - **planner-390** — `/tmp/opencode/ui-audit/planner-390.png`
+- **tracker-390** — `/tmp/opencode/ui-audit/tracker-390.png`
 
 ## Manual review notes
 

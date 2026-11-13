@@ -220,6 +220,10 @@ The extension pages also set a content security policy of
 `script-src 'self'; object-src 'self'; img-src 'self' data: https:`, so remote
 favicons are the only remote subresources loaded.
 
+Monochrome icons (Settings → Dock) use brand glyphs from
+[Simple Icons](https://simpleicons.org), bundled as an offline SVG sprite.
+Simple Icons is released under CC0-1.0; no attribution is required.
+
 ---
 
 ## Troubleshooting

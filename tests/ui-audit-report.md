@@ -1,6 +1,6 @@
 # UI audit report
 
-Generated: 2026-11-13 10:44
+Generated: 2026-11-13 11:03
 
 **Checks:** 63 · PASS 63 · FAIL 0 · WARN 0 · SKIP 0
 
@@ -15,7 +15,7 @@ Generated: 2026-11-13 10:44
 | L. Accessibility | L1 Control names | PASS | all buttons named |
 | L. Accessibility | L3 h1 per panel | PASS | all panels have h1 |
 | J. Settings | J3/J4 No dead drag UI | PASS | clean |
-| A. App shell | A6 CSS balance | PASS | braces 792 / 792 |
+| A. App shell | A6 CSS balance | PASS | braces 795 / 795 |
 | A. App shell | A7 JS balance | PASS | balanced |
 | H. Google apps popup | H1 Anchored popup | PASS | anchored to #appsBtn with a transparent backdrop |
 | D. Home dashboard | D6 Overdue tag | PASS | visible Overdue tag next to late tasks |
@@ -42,7 +42,7 @@ Generated: 2026-11-13 10:44
 | P. MYNT theme | P13 Custom wallpapers | PASS | local wallpaper picker drives the accent mood |
 | O. Tracker & review | O7 Tracker scroll affordance | PASS | sticky identity columns, edge fade and a working Scroll → button |
 | P. MYNT theme | P14 MYNT dock icon style | PASS | toggle swaps dock + Google apps to rounded tonal tiles with springy motion |
-| P. MYNT theme | P15 Monochrome icons | PASS | favicons render as single-colour glyphs that follow the theme |
+| P. MYNT theme | P15 Monochrome icon pack | PASS | bundled Simple Icons (CC0) brand glyphs replace favicons on neutral tonal tiles |
 | O. Tracker & review | O8 Blank rows on first run | PASS | a blank tracker sheet starts with three empty rows |
 | N. Data & sync | N0 Manifest chrome | PASS | valid JSON |
 | N. Data & sync | N0 Manifest firefox | PASS | valid JSON |

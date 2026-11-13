@@ -133,6 +133,73 @@
     { title: "Maps", url: "https://maps.google.com" }
   ];
 
+  /* Monochrome icon pack (Settings → Dock → Monochrome icons).
+     Host → sprite id for the bundled Simple Icons glyphs (CC0-1.0). Exact
+     hosts win, then parent domains (m.youtube.com → youtube.com), then a
+     globe fallback for unknown sites. */
+  const MONO_HOSTS = {
+    "google.com": "google",
+    "mail.google.com": "gmail",
+    "inbox.google.com": "gmail",
+    "images.google.com": "image",
+    "drive.google.com": "googledrive",
+    "docs.google.com": "googledocs",
+    "sheets.google.com": "googlesheets",
+    "slides.google.com": "googleslides",
+    "calendar.google.com": "googlecalendar",
+    "keep.google.com": "googlekeep",
+    "maps.google.com": "googlemaps",
+    "maps.app.goo.gl": "googlemaps",
+    "youtube.com": "youtube",
+    "youtu.be": "youtube",
+    "photos.google.com": "googlephotos",
+    "meet.google.com": "googlemeet",
+    "classroom.google.com": "googleclassroom",
+    "tasks.google.com": "googletasks",
+    "translate.google.com": "googletranslate",
+    "play.google.com": "googleplay",
+    "contacts.google.com": "person",
+    "lens.google.com": "googlelens",
+    "news.google.com": "googlenews",
+    "chat.google.com": "googlechat",
+    "messages.google.com": "googlemessages",
+    "scholar.google.com": "googlescholar",
+    "forms.google.com": "googleforms",
+    "fonts.google.com": "googlefonts",
+    "earth.google.com": "googleearth",
+    "analytics.google.com": "googleanalytics",
+    "adsense.google.com": "googleadsense",
+    "cloud.google.com": "googlecloud",
+    "assistant.google.com": "googleassistant",
+    "home.google.com": "googlehome",
+    "workspace.google.com": "google",
+    "github.com": "github",
+    "gist.github.com": "github",
+    "stackoverflow.com": "stackoverflow",
+    "notion.so": "notion",
+    "notion.site": "notion",
+    "wikipedia.org": "wikipedia",
+    "reddit.com": "reddit",
+    "x.com": "x",
+    "twitter.com": "x",
+    "instagram.com": "instagram",
+    "linkedin.com": "linkedin",
+    "figma.com": "figma",
+    "spotify.com": "spotify",
+    "discord.com": "discord",
+    "discord.gg": "discord",
+    "twitch.tv": "twitch",
+    "amazon.com": "amazon",
+    "amazon.in": "amazon",
+    "openai.com": "openai",
+    "chatgpt.com": "openai",
+    "geeksforgeeks.org": "geeksforgeeks",
+    "leetcode.com": "leetcode",
+    "coursera.org": "coursera",
+    "udemy.com": "udemy",
+    "khanacademy.org": "khanacademy"
+  };
+
   const CATEGORIES = ["PRE", "MAINS", "RRB PRE", "RRB MAINS", "Quiz"];
   const SECTION_DEFS = {
     eng: { plus: "Eng(+)", minus: "Eng(-)", net: "Eng" },
@@ -198,9 +265,39 @@
   }
 
   /* Favicons load eagerly: a hidden/lazy image never starts its request. */
+  function monoGlyphFor(url) {
+    const host = hostOf(url).toLowerCase();
+    if (MONO_HOSTS[host]) return MONO_HOSTS[host];
+    if (/^google\.[a-z]{2,3}(\.[a-z]{2})?$/.test(host)) return "google";
+    const parts = host.split(".");
+    for (let i = 1; i < parts.length - 1; i += 1) {
+      const parent = parts.slice(i).join(".");
+      if (MONO_HOSTS[parent]) return MONO_HOSTS[parent];
+    }
+    return "globe";
+  }
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  function attachMonoIcon(container, url, cls) {
+    if (!container) return null;
+    const svg = document.createElementNS(SVG_NS, "svg");
+    svg.setAttribute("class", cls || "mono-glyph");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("focusable", "false");
+    const use = document.createElementNS(SVG_NS, "use");
+    use.setAttribute("href", "#mi-" + monoGlyphFor(url));
+    svg.appendChild(use);
+    container.appendChild(svg);
+    return svg;
+  }
   function attachFavicon(container, url, size, letter) {
+    if (!container) return null;
+    if (settings.monochromeIcons) {
+      if (letter) letter.style.display = "none";
+      return attachMonoIcon(container, url);
+    }
     const sources = faviconSources(url, size);
-    if (!container || !sources.length) return null;
+    if (!sources.length) return null;
     const img = document.createElement("img");
     img.alt = "";
     img.className = "favicon-img";
@@ -663,10 +760,22 @@
     '</svg>';
 
   function engineLogoMarkup(key) {
+    if (settings.monochromeIcons) {
+      const slug = MONO_ENGINE[key] || key;
+      return '<svg class="mono-glyph search-mono" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#mi-' + slug + '"></use></svg>';
+    }
     if (key === "google") return GOOGLE_LOGO_SVG;
     const engine = ENGINES[key] || ENGINES.google;
     return '<span class="engine-mark" style="--engine-color:' + engine.color + '">' + engine.mark + "</span>";
   }
+  const MONO_ENGINE = {
+    google: "google",
+    bing: "bing",
+    duckduckgo: "duckduckgo",
+    brave: "brave",
+    ecosia: "ecosia",
+    youtube: "youtube"
+  };
 
   function applySearchEngineBranding() {
     const key = ENGINES[settings.engine] ? settings.engine : "google";
@@ -741,6 +850,10 @@
   function updateSetting(key, value) {
     settings[key] = value;
     applySettings();
+    if (key === "monochromeIcons" || key === "myntIcons") {
+      renderApps();
+      renderDockSettings();
+    }
     saveSettings();
   }
 

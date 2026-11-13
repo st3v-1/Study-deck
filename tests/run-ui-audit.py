@@ -231,9 +231,11 @@ def static_checks():
     add("P. MYNT theme", "P14 MYNT dock icon style", "PASS" if mynt_icons else "FAIL",
         "toggle swaps dock + Google apps to rounded tonal tiles with springy motion")
     mono_icons = ("monochromeIcons" in js and 'data-icon-tint="mono"' in css
-                  and 'data-setting="monochromeIcons"' in html and "brightness(0)" in css)
-    add("P. MYNT theme", "P15 Monochrome icons", "PASS" if mono_icons else "FAIL",
-        "favicons render as single-colour glyphs that follow the theme")
+                  and 'data-setting="monochromeIcons"' in html and 'id="mi-google"' in html
+                  and "monoGlyphFor" in js and "attachMonoIcon" in js
+                  and "MONO_HOSTS" in js and ".mono-glyph" in css)
+    add("P. MYNT theme", "P15 Monochrome icon pack", "PASS" if mono_icons else "FAIL",
+        "bundled Simple Icons (CC0) brand glyphs replace favicons on neutral tonal tiles")
     tracker_seed = "sheetIsBlank" in js and "blankRow(), blankRow(), blankRow()" in js
     add("O. Tracker & review", "O8 Blank rows on first run", "PASS" if tracker_seed else "FAIL",
         "a blank tracker sheet starts with three empty rows")

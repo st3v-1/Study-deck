@@ -246,6 +246,19 @@ def static_checks():
                      and "direction * step" in js and "left.disabled = atStart" in js)
     add("O. Tracker & review", "O7 Tracker scroll affordance", "PASS" if tracker_frame else "FAIL",
         "sticky identity columns, edge fade and left/right buttons that disable at each end")
+
+    def rule_z_index(selector):
+        found = re.search(r"(?m)^" + re.escape(selector) + r"\s*\{([^}]*)\}", css)
+        if not found:
+            return None
+        z = re.search(r"z-index:\s*(-?\d+)", found.group(1))
+        return int(z.group(1)) if z else None
+
+    fade_z = rule_z_index(".sheet-fade")
+    bar_z = rule_z_index(".sheet-scroll-bar")
+    add("O. Tracker & review", "O8 Scroll bar above fade", "PASS"
+        if fade_z is not None and bar_z is not None and bar_z > fade_z else "FAIL",
+        "edge fade cannot paint over the buttons (fade z=%s, bar z=%s)" % (fade_z, bar_z))
     mynt_icons = ("myntIcons" in js and 'data-icons="mynt"' in css and 'data-setting="myntIcons"' in html
                   and "mynt-dock-in" in css and "mynt-tile-in" in css and "--app-color" in js)
     add("P. MYNT theme", "P14 MYNT dock icon style", "PASS" if mynt_icons else "FAIL",

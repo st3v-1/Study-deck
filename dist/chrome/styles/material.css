@@ -1369,6 +1369,10 @@ ul.todo-list { display: flex; flex-direction: column; gap: 8px; margin: 0; paddi
 .sheet-frame.at-end .sheet-fade { opacity: 0; }
 .sheet-frame.is-empty { display: none; }
 .sheet-scroll-bar {
+  /* Sits above the edge fade so the fade's gradient cannot wash out the
+     right-hand button and make an enabled control look disabled. */
+  position: relative;
+  z-index: 9;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1411,7 +1415,9 @@ ul.todo-list { display: flex; flex-direction: column; gap: 8px; margin: 0; paddi
 .sheet-scroll-btn:active:not(:disabled) { transform: scale(0.94); }
 .sheet-scroll-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .sheet-scroll-btn:disabled {
-  opacity: 0.34;
+  /* Matches .icon-btn:disabled so an unavailable arrow still reads as a
+     control in dark mode instead of disappearing into the bar. */
+  opacity: 0.4;
   cursor: default;
   box-shadow: none;
   background: var(--md-surface-container-high);

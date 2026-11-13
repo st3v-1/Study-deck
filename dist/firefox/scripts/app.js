@@ -2621,13 +2621,17 @@
       frame.classList.toggle("no-scroll", max <= 4);
       const left = $("#sheetScrollLeft");
       const right = $("#sheetScrollRight");
+      /* `disabled` already blocks activation and removes the button from the
+         tab order, so aria-disabled is only set while it is actually true. */
       if (left) {
         left.disabled = atStart;
-        left.setAttribute("aria-disabled", atStart ? "true" : "false");
+        if (atStart) left.setAttribute("aria-disabled", "true");
+        else left.removeAttribute("aria-disabled");
       }
       if (right) {
         right.disabled = atEnd;
-        right.setAttribute("aria-disabled", atEnd ? "true" : "false");
+        if (atEnd) right.setAttribute("aria-disabled", "true");
+        else right.removeAttribute("aria-disabled");
       }
     });
   }

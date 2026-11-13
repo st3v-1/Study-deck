@@ -1,8 +1,8 @@
 # UI audit report
 
-Generated: 2026-11-13 12:07
+Generated: 2026-11-13 12:24
 
-**Checks:** 70 · PASS 70 · FAIL 0 · WARN 0 · SKIP 0
+**Checks:** 71 · PASS 71 · FAIL 0 · WARN 0 · SKIP 0
 
 | Section | ID | Result | Detail |
 | --- | --- | --- | --- |
@@ -47,6 +47,7 @@ Generated: 2026-11-13 12:07
 | P. MYNT theme | P12 Focus token | PASS | focus rings route through --focus-ring |
 | P. MYNT theme | P13 Custom wallpapers | PASS | local wallpaper picker drives the accent mood |
 | O. Tracker & review | O7 Tracker scroll affordance | PASS | sticky identity columns, edge fade and left/right buttons that disable at each end |
+| O. Tracker & review | O8 Scroll bar above fade | PASS | edge fade cannot paint over the buttons (fade z=8, bar z=9) |
 | P. MYNT theme | P14 MYNT dock icon style | PASS | toggle swaps dock + Google apps to rounded tonal tiles with springy motion |
 | P. MYNT theme | P15 Monochrome icon pack | PASS | bundled Simple Icons (CC0) brand glyphs replace favicons on neutral tonal tiles |
 | O. Tracker & review | O8 Blank rows on first run | PASS | a blank tracker sheet starts with three empty rows |

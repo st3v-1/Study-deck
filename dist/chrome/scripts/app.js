@@ -235,12 +235,6 @@
     d.setDate(d.getDate() - n);
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
-  function escapeHtml(s) {
-    return (s || "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
-  }
-  function escapeAttr(s) {
-    return (s || "").toString().replace(/"/g, "&quot;");
-  }
   function clamp(n, min, max) {
     return Math.min(max, Math.max(min, n));
   }
@@ -254,7 +248,9 @@
       const host = new URL(url).hostname;
       const px = Math.max(16, Number(size) || 64);
       try {
-        if (typeof chrome !== "undefined" && chrome.runtime && typeof chrome.runtime.getURL === "function") {
+        /* _favicon is a Chrome-only API; Firefox uses the public services below. */
+        const isFirefox = typeof browser !== "undefined" && browser.runtime && browser.runtime.id;
+        if (!isFirefox && typeof chrome !== "undefined" && chrome.runtime && typeof chrome.runtime.getURL === "function") {
           sources.push(chrome.runtime.getURL("/_favicon/?pageUrl=" + encodeURIComponent(url) + "&size=" + px));
         }
       } catch (e) { /* _favicon is Chrome-only */ }
@@ -277,16 +273,35 @@
     return "globe";
   }
   const SVG_NS = "http://www.w3.org/2000/svg";
+  function makeEl(tag, cls, text) {
+    const el = document.createElement(tag);
+    if (cls) el.className = cls;
+    if (text != null) el.textContent = text;
+    return el;
+  }
+  function makeSvg(tag, attrs) {
+    const el = document.createElementNS(SVG_NS, tag);
+    Object.keys(attrs || {}).forEach((key) => el.setAttribute(key, attrs[key]));
+    return el;
+  }
+  function svgUse(href, cls, viewBox) {
+    const svg = makeSvg("svg", {
+      class: cls || "icon",
+      viewBox: viewBox || "0 0 24 24",
+      "aria-hidden": "true",
+      focusable: "false"
+    });
+    svg.appendChild(makeSvg("use", { href: href }));
+    return svg;
+  }
+  function strong(text) {
+    const b = document.createElement("b");
+    b.textContent = text;
+    return b;
+  }
   function attachMonoIcon(container, url, cls) {
     if (!container) return null;
-    const svg = document.createElementNS(SVG_NS, "svg");
-    svg.setAttribute("class", cls || "mono-glyph");
-    svg.setAttribute("viewBox", "0 0 24 24");
-    svg.setAttribute("aria-hidden", "true");
-    svg.setAttribute("focusable", "false");
-    const use = document.createElementNS(SVG_NS, "use");
-    use.setAttribute("href", "#mi-" + monoGlyphFor(url));
-    svg.appendChild(use);
+    const svg = svgUse("#mi-" + monoGlyphFor(url), cls || "mono-glyph");
     container.appendChild(svg);
     return svg;
   }
@@ -657,7 +672,7 @@
   function renderWallpaperPalette() {
     const host = $("#wallpaperPalette");
     if (!host) return;
-    host.innerHTML = "";
+    host.replaceChildren();
     const palette = Array.isArray(settings.wallpaperPalette) ? settings.wallpaperPalette : [];
     if (!palette.length) {
       host.hidden = true;
@@ -751,22 +766,16 @@
     rootEl.style.setProperty("--glass-sat", sat.toFixed(0) + "%");
   }
 
-  const GOOGLE_LOGO_SVG =
-    '<svg viewBox="0 0 48 48" aria-hidden="true">' +
-      '<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>' +
-      '<path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>' +
-      '<path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>' +
-      '<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>' +
-    '</svg>';
-
-  function engineLogoMarkup(key) {
+  function engineLogoNode(key) {
     if (settings.monochromeIcons) {
       const slug = MONO_ENGINE[key] || key;
-      return '<svg class="mono-glyph search-mono" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#mi-' + slug + '"></use></svg>';
+      return svgUse("#mi-" + slug, "mono-glyph search-mono");
     }
-    if (key === "google") return GOOGLE_LOGO_SVG;
+    if (key === "google") return svgUse("#logo-google", "search-engine-logo", "0 0 48 48");
     const engine = ENGINES[key] || ENGINES.google;
-    return '<span class="engine-mark" style="--engine-color:' + engine.color + '">' + engine.mark + "</span>";
+    const span = makeEl("span", "engine-mark", engine.mark);
+    span.style.setProperty("--engine-color", engine.color);
+    return span;
   }
   const MONO_ENGINE = {
     google: "google",
@@ -788,7 +797,7 @@
       input.setAttribute("aria-label", label);
     });
     $$(".search-logo").forEach((logo) => {
-      logo.innerHTML = engineLogoMarkup(key);
+      logo.replaceChildren(engineLogoNode(key));
     });
   }
 
@@ -860,17 +869,25 @@
   /* ---------------- toast ---------------- */
 
   function toastIcon(id) {
-    return '<svg class="toast-icon" aria-hidden="true"><use href="#' + id + '"></use></svg> ';
+    return svgUse("#" + id, "toast-icon");
   }
 
-  function showToast(msg, action) {
+  function showToast(...parts) {
     const host = $("#toastHost");
     if (!host) return;
+    let action = null;
+    const last = parts[parts.length - 1];
+    if (last && typeof last === "object" && last.label && typeof last.onClick === "function") {
+      action = parts.pop();
+    }
     const el = document.createElement("div");
     el.className = "toast";
     const copy = document.createElement("div");
     copy.className = "toast-copy";
-    copy.innerHTML = msg;
+    parts.forEach((part) => {
+      if (part instanceof Node) copy.appendChild(part);
+      else if (part != null) copy.appendChild(document.createTextNode(String(part)));
+    });
     el.appendChild(copy);
 
     if (action) {
@@ -889,7 +906,7 @@
     close.type = "button";
     close.className = "close";
     close.setAttribute("aria-label", "Dismiss");
-    close.innerHTML = '<svg class="icon"><use href="#i-close"></use></svg>';
+    close.appendChild(svgUse("#i-close"));
     close.addEventListener("click", () => el.remove());
     el.appendChild(close);
 
@@ -913,58 +930,64 @@
   function analogClockMarkup() {
     /* MYNT blob face — no ticks or numerals. */
     const face = "M93.6379 63.9405C89.7543 78.4344 78.4333 89.7554 63.9394 93.639l-7.4405 1.9937c-22.4055 6.0033-35.702 29.0333-29.6984 51.4393l1.9196 7.164c3.8837 14.494-.2601 29.959-10.8704 40.569l-5.5482 5.548c-16.402 16.402-16.402 42.995 0 59.397l5.6221 5.622c10.6102 10.611 14.754 26.075 10.8704 40.569l-1.9936 7.441c-6.0036 22.405 7.2929 45.435 29.6985 51.439l7.4406 1.994c14.4939 3.883 25.8149 15.204 29.6985 29.698l1.9942 7.443c6.0038 22.405 29.0338 35.702 51.4388 29.698l7.442-1.994c14.494-3.883 29.959.26 40.569 10.871l5.271 5.271c16.402 16.402 42.995 16.402 59.397 0l5.347-5.347c10.61-10.61 26.075-14.754 40.569-10.87l7.717 2.068c22.405 6.003 45.435-7.293 51.439-29.699l1.993-7.439c3.884-14.494 15.205-25.815 29.699-29.699l7.441-1.994c22.406-6.003 35.702-29.033 29.699-51.439l-2.068-7.718c-3.884-14.493.26-29.958 10.87-40.569l5.346-5.346c16.402-16.402 16.402-42.995 0-59.397l-5.272-5.272c-10.61-10.61-14.754-26.075-10.87-40.569l1.994-7.441c6.003-22.406-7.293-45.436-29.699-51.4398l-7.441-1.9939c-14.494-3.8836-25.815-15.2046-29.699-29.6984l-1.993-7.4395c-6.004-22.4056-29.034-35.702-51.439-29.6985l-7.441 1.9937c-14.494 3.8836-29.959-.2601-40.569-10.8704l-5.623-5.6227c-16.402-16.402-42.995-16.402-59.397 0l-5.547 5.5476c-10.61 10.6102-26.075 14.754-40.569 10.8704l-7.166-1.92c-22.405-6.0036-45.435 7.2929-51.4388 29.6985l-1.9943 7.4425Z";
-    return (
-      '<div class="analog-wrap">' +
-        '<svg class="analog" viewBox="0 0 461 461" role="img" aria-label="Analog clock">' +
-          '<path class="a-face" d="' + face + '"/>' +
-          '<g class="a-hand a-hour"><rect x="215.5" y="107.5" width="30" height="138" rx="15"/></g>' +
-          '<g class="a-hand a-minute"><rect x="215.5" y="76.5" width="30" height="169" rx="15"/></g>' +
-          '<g class="a-hand a-second"><circle cx="230.5" cy="76.5" r="15"/></g>' +
-        '</svg>' +
-      '</div>' +
-      (settings.clockShowDate ? '<div class="clock-date">—</div>' : "") +
-      '<span class="clock-sr clock-time">—</span>'
-    );
+    const frag = document.createDocumentFragment();
+    const wrap = makeEl("div", "analog-wrap");
+    const svg = makeSvg("svg", {
+      class: "analog",
+      viewBox: "0 0 461 461",
+      role: "img",
+      "aria-label": "Analog clock"
+    });
+    svg.appendChild(makeSvg("path", { class: "a-face", d: face }));
+    const hour = makeSvg("g", { class: "a-hand a-hour" });
+    hour.appendChild(makeSvg("rect", { x: "215.5", y: "107.5", width: "30", height: "138", rx: "15" }));
+    const minute = makeSvg("g", { class: "a-hand a-minute" });
+    minute.appendChild(makeSvg("rect", { x: "215.5", y: "76.5", width: "30", height: "169", rx: "15" }));
+    const second = makeSvg("g", { class: "a-hand a-second" });
+    second.appendChild(makeSvg("circle", { cx: "230.5", cy: "76.5", r: "15" }));
+    svg.append(hour, minute, second);
+    wrap.appendChild(svg);
+    frag.appendChild(wrap);
+    if (settings.clockShowDate) frag.appendChild(makeEl("div", "clock-date", "—"));
+    frag.appendChild(makeEl("span", "clock-sr clock-time", "—"));
+    return frag;
   }
 
   function clockMarkup() {
     if (settings.clockStyle === "analog") return analogClockMarkup();
+    const frag = document.createDocumentFragment();
     if (settings.clockStyle === "stacked") {
-      return (
-        '<div class="clock-stack">' +
-          '<div class="clock-time">—</div>' +
-          (settings.clockShowDate ? '<div class="clock-date">—</div>' : "") +
-        '</div>'
-      );
+      const stack = makeEl("div", "clock-stack");
+      stack.appendChild(makeEl("div", "clock-time", "—"));
+      if (settings.clockShowDate) stack.appendChild(makeEl("div", "clock-date", "—"));
+      frag.appendChild(stack);
+      return frag;
     }
     if (settings.clockStyle === "minimal") {
-      return (
-        '<div class="clock-minimal-row">' +
-          '<span class="clock-time">—</span>' +
-          (settings.clockSeconds ? '<span class="clock-sec">00</span>' : "") +
-        '</div>' +
-        (settings.clockShowDate ? '<div class="clock-date">—</div>' : "")
-      );
+      const row = makeEl("div", "clock-minimal-row");
+      row.appendChild(makeEl("span", "clock-time", "—"));
+      if (settings.clockSeconds) row.appendChild(makeEl("span", "clock-sec", "00"));
+      frag.appendChild(row);
+      if (settings.clockShowDate) frag.appendChild(makeEl("div", "clock-date", "—"));
+      return frag;
     }
     if (settings.clockStyle === "chip") {
-      return (
-        '<div class="clock-chip">' +
-          '<span class="clock-time">—</span>' +
-          (settings.clockShowDate ? '<span class="clock-date">—</span>' : "") +
-        '</div>'
-      );
+      const chip = makeEl("div", "clock-chip");
+      chip.appendChild(makeEl("span", "clock-time", "—"));
+      if (settings.clockShowDate) chip.appendChild(makeEl("span", "clock-date", "—"));
+      frag.appendChild(chip);
+      return frag;
     }
-    return (
-      '<div class="clock-time">—</div>' +
-      (settings.clockShowDate ? '<div class="clock-date">—</div>' : "")
-    );
+    frag.appendChild(makeEl("div", "clock-time", "—"));
+    if (settings.clockShowDate) frag.appendChild(makeEl("div", "clock-date", "—"));
+    return frag;
   }
 
   function renderClockInto(block) {
     if (!block) return;
     block.dataset.style = settings.clockStyle;
     block.classList.toggle("no-seconds", !settings.clockSeconds);
-    block.innerHTML = clockMarkup();
+    block.replaceChildren(clockMarkup());
     updateClockElement(block, block.id === "clockBlock");
   }
 
@@ -1035,18 +1058,24 @@
     const host = $("#clockChoices");
     if (!host) return;
     const previews = {
-      digital: '<span class="cp-big">10:24</span><span class="cp-small">MON 9</span>',
-      stacked: '<span class="cp-big">10:24</span><span class="cp-small">MONDAY</span>',
-      minimal: '<span class="cp-big">10:24</span><span class="cp-sec">07</span>',
-      analog: '<svg class="icon cp-clock" aria-hidden="true"><use href="#i-clock"></use></svg>',
-      chip: '<span class="cp-chip">10:24 · Mon</span>'
+      digital: () => [makeEl("span", "cp-big", "10:24"), makeEl("span", "cp-small", "MON 9")],
+      stacked: () => [makeEl("span", "cp-big", "10:24"), makeEl("span", "cp-small", "MONDAY")],
+      minimal: () => [makeEl("span", "cp-big", "10:24"), makeEl("span", "cp-sec", "07")],
+      analog: () => [svgUse("#i-clock", "icon cp-clock")],
+      chip: () => [makeEl("span", "cp-chip", "10:24 · Mon")]
     };
-    host.innerHTML = Object.keys(CLOCK_STYLES).map((key) =>
-      '<button type="button" class="clock-choice" data-clock-style="' + key + '" title="' + CLOCK_STYLES[key].name + ' clock">' +
-        '<span class="clock-preview cp-' + key + '">' + previews[key] + '</span>' +
-        '<span class="cp-name">' + CLOCK_STYLES[key].name + '</span>' +
-      '</button>'
-    ).join("");
+    const choices = Object.keys(CLOCK_STYLES).map((key) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "clock-choice";
+      b.dataset.clockStyle = key;
+      b.title = CLOCK_STYLES[key].name + " clock";
+      const preview = makeEl("span", "clock-preview cp-" + key);
+      previews[key]().forEach((node) => preview.appendChild(node));
+      b.append(preview, makeEl("span", "cp-name", CLOCK_STYLES[key].name));
+      return b;
+    });
+    host.replaceChildren(...choices);
   }
 
   /* ---------------- desktop widget layout ---------------- */
@@ -1176,7 +1205,7 @@
     });
     const placeNames = { left: "left", center: "centre", right: "right", top: "top", mid: "middle", bottom: "bottom" };
 
-    host.innerHTML = "";
+    host.replaceChildren();
     WIDGETS.forEach(({ key, name }) => {
       const p = settings.widgetPositions[key] || {};
       const row = document.createElement("div");
@@ -1280,7 +1309,7 @@
   function renderApps() {
     const grid = $("#appsGrid");
     if (!grid) return;
-    grid.innerHTML = "";
+    grid.replaceChildren();
     GOOGLE_APPS.forEach((app, idx) => {
       const a = document.createElement("a");
       a.className = "app-tile";
@@ -1348,7 +1377,7 @@
   function renderDock() {
     const dock = $("#dock");
     if (!dock) return;
-    dock.innerHTML = "";
+    dock.replaceChildren();
     if (!settings.showDock) { applyWidgetLayout(); return; }
 
     dockItems.forEach((item, idx) => {
@@ -1456,7 +1485,7 @@
   function addDockItem(title, url) {
     const clean = normalizeUrl(url);
     if (!clean) {
-      showToast(toastIcon("i-alert") + "That doesn’t look like a valid web address.");
+      showToast(toastIcon("i-alert"), "That doesn’t look like a valid web address.");
       return false;
     }
     if (dockMatch(clean)) {
@@ -1493,9 +1522,9 @@
   function renderDockSettings() {
     const host = $("#dockList");
     if (!host) return;
-    host.innerHTML = "";
+    host.replaceChildren();
     if (!dockItems.length) {
-      host.innerHTML = '<div class="empty-state">Your dock is empty. Add a favourite below.</div>';
+      host.replaceChildren(makeEl("div", "empty-state", "Your dock is empty. Add a favourite below."));
       return;
     }
     dockItems.forEach((item, index) => {
@@ -1523,7 +1552,7 @@
       up.type = "button";
       up.className = "icon-btn";
       up.title = "Move up";
-      up.innerHTML = '<svg class="icon"><use href="#i-arrow-up"></use></svg>';
+      up.replaceChildren(svgUse("#i-arrow-up"));
       up.disabled = index === 0;
       up.addEventListener("click", () => moveDockItem(item.id, -1));
 
@@ -1531,7 +1560,7 @@
       down.type = "button";
       down.className = "icon-btn";
       down.title = "Move down";
-      down.innerHTML = '<svg class="icon"><use href="#i-arrow-down"></use></svg>';
+      down.replaceChildren(svgUse("#i-arrow-down"));
       down.disabled = index === dockItems.length - 1;
       down.addEventListener("click", () => moveDockItem(item.id, 1));
 
@@ -1539,7 +1568,7 @@
       del.type = "button";
       del.className = "icon-btn";
       del.title = "Remove from dock";
-      del.innerHTML = '<svg class="icon"><use href="#i-trash"></use></svg>';
+      del.replaceChildren(svgUse("#i-trash"));
       del.addEventListener("click", () => removeDockItem(item.id));
 
       row.append(icon, copy, up, down, del);
@@ -1623,7 +1652,7 @@
       return;
     }
     const list = $("#bookmarksList");
-    if (list) list.innerHTML = '<div class="bm-empty">Loading bookmarks…</div>';
+    if (list) list.replaceChildren(makeEl("div", "bm-empty", "Loading bookmarks…"));
     try {
       const tree = await bookmarksCall("getTree", []);
       allBookmarks = flattenBookmarks(tree);
@@ -1640,7 +1669,7 @@
   function renderBookmarks() {
     const host = $("#bookmarksList");
     if (!host) return;
-    host.innerHTML = "";
+    host.replaceChildren();
 
     if (bookmarksError) {
       const note = document.createElement("div");
@@ -1701,7 +1730,7 @@
       star.className = "icon-btn bm-star" + (inDock ? " active" : "");
       star.title = inDock ? "Remove from dock" : "Add to dock";
       star.setAttribute("aria-label", inDock ? "Remove " + (bm.title || hostOf(bm.url)) + " from dock" : "Pin " + (bm.title || hostOf(bm.url)) + " to dock");
-      star.innerHTML = '<svg class="icon"><use href="' + (inDock ? "#i-star" : "#i-star-outline") + '"></use></svg>';
+      star.appendChild(svgUse(inDock ? "#i-star" : "#i-star-outline"));
       star.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -1710,7 +1739,7 @@
           removeDockItem(existing.id);
           showToast("Removed from dock.");
         } else if (addDockItem(bm.title || hostOf(bm.url), bm.url)) {
-          showToast(toastIcon("i-star") + "Pinned to your dock.");
+          showToast(toastIcon("i-star"), "Pinned to your dock.");
         }
         renderBookmarks();
       });
@@ -1779,7 +1808,7 @@
 
   function buildAccentSwatches() {
     const host = $("#accentSwatches");
-    host.innerHTML = "";
+    host.replaceChildren();
     Object.keys(ACCENTS).forEach((key) => {
       const a = ACCENTS[key];
       const b = document.createElement("button");
@@ -1885,9 +1914,9 @@
     renderHomeTasks();
     updateHomeGreeting();
     const host = todoListEl();
-    host.innerHTML = "";
+    host.replaceChildren();
     if (todos.length === 0) {
-      host.innerHTML = '<div class="empty-state">Nothing logged yet. Add your first task above.</div>';
+      host.replaceChildren(makeEl("div", "empty-state", "Nothing logged yet. Add your first task above."));
       return;
     }
     const groups = {};
@@ -1958,7 +1987,7 @@
         del.type = "button";
         del.className = "del-btn";
         del.title = "Delete task";
-        del.innerHTML = "&times;";
+        del.textContent = "×";
         li.appendChild(del);
 
         check.addEventListener("click", () => {
@@ -2012,7 +2041,7 @@
         if (hm[0] * 60 + hm[1] <= nowMins) {
           t.notified = true;
           changed = true;
-          showToast(toastIcon("i-clock") + "Reminder: <b>" + escapeHtml(t.text) + "</b> (" + t.time + ")");
+          showToast(toastIcon("i-clock"), "Reminder: ", strong(t.text), " (" + t.time + ")");
         }
       }
     });
@@ -2081,7 +2110,7 @@
     const countEl = $("#homeTaskCount");
     if (countEl) countEl.textContent = items.length ? left + " left · " + items.length + " total" : "Nothing planned";
 
-    host.innerHTML = "";
+    host.replaceChildren();
     const emptyEl = $("#homeTaskEmpty");
     if (emptyEl) emptyEl.hidden = items.length > 0;
 
@@ -2104,7 +2133,7 @@
       del.className = "del-btn";
       del.title = "Delete task";
       del.setAttribute("aria-label", "Delete task");
-      del.innerHTML = "&times;";
+      del.textContent = "×";
 
       li.append(check, text);
       if (t.time) {
@@ -2147,7 +2176,7 @@
   function renderHomeQuickLinks() {
     const host = $("#homeQuickLinks");
     if (!host) return;
-    host.innerHTML = "";
+    host.replaceChildren();
 
     dockItems.slice(0, 7).forEach((item) => {
       const a = document.createElement("a");
@@ -2232,9 +2261,9 @@
 
   function renderNotes() {
     const el = $("#notesList");
-    el.innerHTML = "";
+    el.replaceChildren();
     if (notes.length === 0) {
-      el.innerHTML = '<div class="empty-state">No notes saved yet.</div>';
+      el.replaceChildren(makeEl("div", "empty-state", "No notes saved yet."));
       return;
     }
     notes.slice().reverse().forEach((n) => {
@@ -2256,7 +2285,7 @@
       del.type = "button";
       del.className = "del-btn";
       del.title = "Delete note";
-      del.innerHTML = "&times;";
+      del.textContent = "×";
       del.addEventListener("click", () => {
         const index = notes.findIndex((x) => x.id === n.id);
         if (index < 0) return;
@@ -2412,11 +2441,11 @@
       if (pomoLog.length > 200) pomoLog = pomoLog.slice(-200);
       store.save("pomodoro-log", pomoLog);
       if (!restored) beep();
-      showToast(toastIcon("i-check") + "Focus session complete. Time for a break.");
+      showToast(toastIcon("i-check"), "Focus session complete. Time for a break.");
       pomo.mode = pomo.sessionsToday % 4 === 0 ? "long" : "short";
     } else {
       if (!restored) beep();
-      showToast(toastIcon("i-bell") + "Break over — back to focus.");
+      showToast(toastIcon("i-bell"), "Break over — back to focus.");
       pomo.mode = "work";
     }
 
@@ -2521,7 +2550,7 @@
 
   function renderSheetTabs() {
     const host = $("#sheetTabs");
-    host.innerHTML = "";
+    host.replaceChildren();
     CATEGORIES.forEach((cat) => {
       const b = document.createElement("button");
       b.type = "button";
@@ -2541,17 +2570,22 @@
 
   function renderSheetHead() {
     const sections = CATEGORY_SECTIONS[activeCategory];
-    let sectionHeaders = "";
+    const tr = document.createElement("tr");
+    [
+      ["S.No", "col-sno"], ["Date"], ["Exam"], ["Mock Name", "col-mock"], ["Rank"], ["Total Cand."],
+      ["Marks"], ["Percentile", "hdr-pct"], ["Accuracy", "hdr-pct"], ["Attempt"],
+      ["Right", "hdr-right"], ["Wrong", "hdr-wrong"]
+    ].forEach(([label, cls]) => tr.appendChild(makeEl("th", cls, label)));
     sections.forEach((key) => {
       const d = SECTION_DEFS[key];
-      sectionHeaders += "<th>" + d.plus + "</th><th>" + d.minus + "</th><th>" + d.net + " Marks</th>";
+      tr.append(
+        makeEl("th", null, d.plus),
+        makeEl("th", null, d.minus),
+        makeEl("th", null, d.net + " Marks")
+      );
     });
-    $("#sheetHead").innerHTML =
-      "<tr>" +
-      '<th class="col-sno">S.No</th><th>Date</th><th>Exam</th><th class="col-mock">Mock Name</th><th>Rank</th><th>Total Cand.</th>' +
-      '<th>Marks</th><th class="hdr-pct">Percentile</th><th class="hdr-pct">Accuracy</th><th>Attempt</th>' +
-      '<th class="hdr-right">Right</th><th class="hdr-wrong">Wrong</th>' +
-      sectionHeaders + "<th></th></tr>";
+    tr.appendChild(document.createElement("th"));
+    $("#sheetHead").replaceChildren(tr);
   }
 
   function blankRow() {
@@ -2559,7 +2593,12 @@
   }
 
   function ovrButton(field) {
-    return '<button type="button" class="ovr-reset" data-ovr="' + field + '" title="Edited — reset to the calculated value" aria-label="Reset to the calculated value">↺</button>';
+    const b = makeEl("button", "ovr-reset", "↺");
+    b.type = "button";
+    b.dataset.ovr = field;
+    b.title = "Edited — reset to the calculated value";
+    b.setAttribute("aria-label", "Reset to the calculated value");
+    return b;
   }
 
   function computeRow(r, sections) {
@@ -2672,39 +2711,107 @@
     });
   }
 
+  function trackerInput(type, field, opts) {
+    const o = opts || {};
+    const input = document.createElement("input");
+    input.type = type;
+    input.dataset.f = field;
+    if (o.className) input.className = o.className;
+    if (o.step) input.setAttribute("step", o.step);
+    if (o.list) input.setAttribute("list", o.list);
+    if (o.placeholder) input.placeholder = o.placeholder;
+    if (o.bold) input.style.fontWeight = "700";
+    if (o.radius) input.style.borderRadius = o.radius;
+    input.value = o.value == null ? "" : String(o.value);
+    return input;
+  }
+
+  function cell(...nodes) {
+    const td = document.createElement("td");
+    td.append(...nodes);
+    return td;
+  }
+
   function renderSheet() {
     const sections = CATEGORY_SECTIONS[activeCategory];
     const rows = mockData[activeCategory] || [];
     const tbody = $("#sheetBody");
-    tbody.innerHTML = "";
+    tbody.replaceChildren();
     $("#sheetEmpty").hidden = rows.length > 0;
     const frame = $("#sheetFrame");
     if (frame) frame.classList.toggle("is-empty", rows.length === 0);
 
     rows.forEach((r, idx) => {
-      let sectionCells = "";
+      const tr = document.createElement("tr");
+      tr.appendChild(makeEl("td", "sno", String(idx + 1)));
+      tr.appendChild(cell(trackerInput("date", "date", { value: r.date || "" })));
+      tr.appendChild(cell(trackerInput("text", "exam", {
+        className: "wide", list: "examOptions", placeholder: "Exam", value: r.exam
+      })));
+      const mockTd = cell(trackerInput("text", "mockName", {
+        className: "wide", placeholder: "Test name", value: r.mockName
+      }));
+      mockTd.className = "col-mock";
+      tr.appendChild(mockTd);
+      tr.appendChild(cell(trackerInput("number", "rank", { placeholder: "Rank", value: r.rank || "" })));
+      tr.appendChild(cell(trackerInput("number", "totalCandidates", {
+        placeholder: "Total", value: r.totalCandidates || ""
+      })));
+
+      const marksTd = makeEl("td", "computed total-marks");
+      marksTd.style.fontWeight = "700";
+      const marksBtn = makeEl("button", "marks-toggle", "0");
+      marksBtn.type = "button";
+      marksBtn.title = "Click to cycle the marks colour";
+      marksTd.appendChild(marksBtn);
+      tr.appendChild(marksTd);
+
+      const autoTag = makeEl("span", "auto-tag", "auto");
+      autoTag.style.display = "none";
+      const pctTd = makeEl("td", "pct-cell ovr-cell");
+      pctTd.append(
+        trackerInput("number", "percentile", { step: "0.01" }),
+        autoTag,
+        ovrButton("percentile")
+      );
+      tr.appendChild(pctTd);
+
+      const accTd = makeEl("td", "ovr-cell");
+      accTd.append(
+        trackerInput("number", "accuracyOvr", { step: "0.01", bold: true, radius: "6px" }),
+        ovrButton("accuracyOvr")
+      );
+      tr.appendChild(accTd);
+
+      [["attemptOvr", "computed ovr-cell"],
+       ["rightOvr", "computed right-cell ovr-cell"],
+       ["wrongOvr", "computed wrong-cell ovr-cell"]].forEach(([field, cls]) => {
+        const td = makeEl("td", cls);
+        td.append(trackerInput("number", field, { bold: true }), ovrButton(field));
+        tr.appendChild(td);
+      });
+
       sections.forEach((key) => {
         const rawNet = r[key + "Net"];
-        sectionCells += '<td><input type="number" data-f="' + key + 'Plus" value="' + (r[key + "Plus"] || 0) + '"></td>';
-        sectionCells += '<td><input type="number" data-f="' + key + 'Minus" value="' + (r[key + "Minus"] || 0) + '"></td>';
-        sectionCells += '<td><input type="number" step="0.01" data-f="' + key + 'Net" value="' + (rawNet === undefined || rawNet === null ? "" : rawNet) + '" placeholder="0" style="font-weight:700;"></td>';
+        tr.append(
+          cell(trackerInput("number", key + "Plus", { value: r[key + "Plus"] || 0 })),
+          cell(trackerInput("number", key + "Minus", { value: r[key + "Minus"] || 0 })),
+          cell(trackerInput("number", key + "Net", {
+            step: "0.01",
+            placeholder: "0",
+            bold: true,
+            value: rawNet === undefined || rawNet === null ? "" : rawNet
+          }))
+        );
       });
-      const tr = document.createElement("tr");
-      tr.innerHTML =
-        '<td class="sno">' + (idx + 1) + "</td>" +
-        '<td><input type="date" data-f="date" value="' + (r.date || "") + '"></td>' +
-        '<td><input type="text" class="wide" list="examOptions" data-f="exam" value="' + escapeAttr(r.exam) + '" placeholder="Exam"></td>' +
-        '<td class="col-mock"><input type="text" class="wide" data-f="mockName" value="' + escapeAttr(r.mockName) + '" placeholder="Test name"></td>' +
-        '<td><input type="number" data-f="rank" value="' + (r.rank || "") + '" placeholder="Rank"></td>' +
-        '<td><input type="number" data-f="totalCandidates" value="' + (r.totalCandidates || "") + '" placeholder="Total"></td>' +
-        '<td class="computed total-marks" style="font-weight:700;"><button type="button" class="marks-toggle" title="Click to cycle the marks colour">0</button></td>' +
-        '<td class="pct-cell ovr-cell"><input type="number" step="0.01" data-f="percentile" value=""><span class="auto-tag" style="display:none;">auto</span>' + ovrButton("percentile") + '</td>' +
-        '<td class="ovr-cell"><input type="number" step="0.01" data-f="accuracyOvr" style="font-weight:700;border-radius:6px;">' + ovrButton("accuracyOvr") + '</td>' +
-        '<td class="computed ovr-cell"><input type="number" data-f="attemptOvr" style="font-weight:700;">' + ovrButton("attemptOvr") + '</td>' +
-        '<td class="computed right-cell ovr-cell"><input type="number" data-f="rightOvr" style="font-weight:700;">' + ovrButton("rightOvr") + '</td>' +
-        '<td class="computed wrong-cell ovr-cell"><input type="number" data-f="wrongOvr" style="font-weight:700;">' + ovrButton("wrongOvr") + '</td>' +
-        sectionCells +
-        '<td><button class="del-btn" type="button" title="Delete row">&times;</button></td>';
+
+      const delTd = document.createElement("td");
+      const delBtn = makeEl("button", "del-btn", "×");
+      delBtn.type = "button";
+      delBtn.title = "Delete row";
+      delTd.appendChild(delBtn);
+      tr.appendChild(delTd);
+
       tbody.appendChild(tr);
       updateComputedCells(tr, r, sections);
 
@@ -2757,9 +2864,20 @@
       const avgMarks = marksArr.reduce((a, b) => a + b, 0) / marksArr.length;
       const accArr = rows.map((r) => effectiveRow(r, sections).accuracy);
       const avgAcc = accArr.reduce((a, b) => a + b, 0) / accArr.length;
-      summaryEl.innerHTML = "<div>Tests: <b>" + rows.length + "</b></div><div>Avg marks: <b>" + fmt(avgMarks) + "</b></div><div>Avg accuracy: <b>" + fmt(avgAcc) + "%</b></div>";
+      const sum = document.createDocumentFragment();
+      const line = (label, value) => {
+        const div = document.createElement("div");
+        div.append(label, strong(value));
+        return div;
+      };
+      sum.append(
+        line("Tests: ", String(rows.length)),
+        line("Avg marks: ", fmt(avgMarks)),
+        line("Avg accuracy: ", fmt(avgAcc) + "%")
+      );
+      summaryEl.replaceChildren(sum);
     } else {
-      summaryEl.innerHTML = "";
+      summaryEl.replaceChildren();
     }
     drawTrend(rows);
   }
@@ -2768,7 +2886,7 @@
     const svg = $("#trendSvg");
     const wrap = svg.closest(".trend-wrap");
     if (wrap) wrap.hidden = rows.length === 0;
-    svg.innerHTML = "";
+    svg.replaceChildren();
     const sorted = rows.slice().sort((a, b) => a.date < b.date ? -1 : 1).slice(-12);
     if (sorted.length === 0) return;
     const W = 600, H = 120, padL = 36, padR = 16, padT = 14, padB = 22;
@@ -2783,20 +2901,37 @@
       const y = padT + plotH - (m / maxV) * plotH;
       return { x: x, y: y };
     });
-    let html = "";
+    const nodes = [];
     [0, 0.5, 1].forEach((t) => {
       const y = padT + plotH - t * plotH;
-      html += '<line x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y + '" stroke="var(--md-outline-variant)" stroke-width="1"/>';
-      html += '<text x="' + (padL - 6) + '" y="' + (y + 3) + '" font-size="11" fill="var(--md-on-surface-variant)" text-anchor="end" font-family="system-ui, sans-serif">' + Math.round(maxV * t) + "</text>";
+      nodes.push(makeSvg("line", {
+        x1: String(padL), y1: String(y), x2: String(W - padR), y2: String(y),
+        stroke: "var(--md-outline-variant)", "stroke-width": "1"
+      }));
+      const label = makeSvg("text", {
+        x: String(padL - 6), y: String(y + 3), "font-size": "11",
+        fill: "var(--md-on-surface-variant)", "text-anchor": "end",
+        "font-family": "system-ui, sans-serif"
+      });
+      label.textContent = String(Math.round(maxV * t));
+      nodes.push(label);
     });
     const linePath = pts.map((p, i) => (i === 0 ? "M" : "L") + p.x.toFixed(1) + "," + p.y.toFixed(1)).join(" ");
     const areaPath = linePath + " L" + pts[pts.length - 1].x.toFixed(1) + "," + (padT + plotH) + " L" + pts[0].x.toFixed(1) + "," + (padT + plotH) + " Z";
-    html += '<path d="' + areaPath + '" fill="var(--md-primary-container)" opacity="0.55" stroke="none"/>';
-    html += '<path d="' + linePath + '" fill="none" stroke="var(--md-primary)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>';
+    nodes.push(makeSvg("path", {
+      d: areaPath, fill: "var(--md-primary-container)", opacity: "0.55", stroke: "none"
+    }));
+    nodes.push(makeSvg("path", {
+      d: linePath, fill: "none", stroke: "var(--md-primary)",
+      "stroke-width": "2.4", "stroke-linejoin": "round", "stroke-linecap": "round"
+    }));
     pts.forEach((p) => {
-      html += '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="3.4" fill="var(--md-surface-container-lowest)" stroke="var(--md-primary)" stroke-width="2"/>';
+      nodes.push(makeSvg("circle", {
+        cx: p.x.toFixed(1), cy: p.y.toFixed(1), r: "3.4",
+        fill: "var(--md-surface-container-lowest)", stroke: "var(--md-primary)", "stroke-width": "2"
+      }));
     });
-    svg.innerHTML = html;
+    svg.replaceChildren(...nodes);
   }
 
   /* ---------------- calendar ---------------- */
@@ -2821,7 +2956,7 @@
     const host = $("#calendarList");
     $("#calendarEmpty").hidden = events.length > 0;
     const sorted = events.slice().sort((a, b) => a.date < b.date ? -1 : 1);
-    host.innerHTML = "";
+    host.replaceChildren();
     sorted.forEach((ev) => {
       const diff = daysDiffFromToday(ev.date);
       let badgeClass, badgeText;
@@ -2850,7 +2985,7 @@
       del.type = "button";
       del.className = "del-btn";
       del.title = "Delete event";
-      del.innerHTML = "&times;";
+      del.textContent = "×";
 
       [title, date].forEach((inp) => {
         inp.addEventListener("change", (e) => {
@@ -2901,8 +3036,10 @@
       (byDate[ev.date] = byDate[ev.date] || []).push(ev);
     });
 
-    let html = "";
-    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach((d) => { html += '<div class="wd">' + d + "</div>"; });
+    const nodes = [];
+    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach((d) => {
+      nodes.push(makeEl("div", "wd", d));
+    });
 
     const totalCells = Math.ceil((firstDow + daysInMonth) / 7) * 7;
     for (let i = 0; i < totalCells; i++) {
@@ -2915,15 +3052,31 @@
       const iso = cellDate.getFullYear() + "-" + String(cellDate.getMonth() + 1).padStart(2, "0") + "-" + String(cellDate.getDate()).padStart(2, "0");
       const isToday = iso === todayIso;
       const dayEvents = byDate[iso] || [];
-      const pillsHtml = dayEvents.map((ev) => {
+      const cls = ["month-cell"];
+      if (outside) cls.push("outside");
+      if (isToday) cls.push("today");
+      if (dayEvents.length) cls.push("has-events");
+      if (iso === selectedDay) cls.push("selected");
+      const cell = makeEl("div", cls.join(" "));
+      cell.dataset.date = iso;
+      cell.setAttribute("role", "button");
+      cell.tabIndex = iso === selectedDay ? 0 : -1;
+      cell.setAttribute("aria-pressed", iso === selectedDay ? "true" : "false");
+      cell.setAttribute("aria-label", cellDate.toLocaleDateString("en-US", {
+        weekday: "long", month: "long", day: "numeric"
+      }) + (dayEvents.length ? ", " + dayEvents.length + " event" + (dayEvents.length === 1 ? "" : "s") : ""));
+      cell.appendChild(makeEl("div", "cell-date", String(cellDate.getDate())));
+      dayEvents.forEach((ev) => {
         const diff = daysDiffFromToday(ev.date);
-        const cls = diff > 0 ? "upcoming" : (diff === 0 ? "today-pill" : "past");
-        return '<div class="month-pill ' + cls + '" data-id="' + ev.id + '" title="' + escapeAttr(ev.title) + '">' + escapeHtml(ev.title) + "</div>";
-      }).join("");
-      html += '<div class="month-cell' + (outside ? " outside" : "") + (isToday ? " today" : "") + (dayEvents.length ? " has-events" : "") + (iso === selectedDay ? " selected" : "") + '" data-date="' + iso + '" role="button" tabindex="' + (iso === selectedDay ? "0" : "-1") + '" aria-pressed="' + (iso === selectedDay ? "true" : "false") + '" aria-label="' + cellDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) + (dayEvents.length ? ", " + dayEvents.length + " event" + (dayEvents.length === 1 ? "" : "s") : "") + '">' +
-        '<div class="cell-date">' + cellDate.getDate() + "</div>" + pillsHtml + "</div>";
+        const pillClass = diff > 0 ? "upcoming" : (diff === 0 ? "today-pill" : "past");
+        const pill = makeEl("div", "month-pill " + pillClass, ev.title);
+        pill.dataset.id = ev.id;
+        pill.title = ev.title;
+        cell.appendChild(pill);
+      });
+      nodes.push(cell);
     }
-    grid.innerHTML = html;
+    grid.replaceChildren(...nodes);
 
     grid.querySelectorAll(".month-pill").forEach((p) => {
       p.addEventListener("click", (e) => {
@@ -2968,7 +3121,7 @@
   function renderDayEvents(iso) {
     const host = $("#dayEvents");
     if (!host) return;
-    host.innerHTML = "";
+    host.replaceChildren();
     const dayList = events
       .filter((ev) => ev.date === iso)
       .sort((a, b) => String(a.title).localeCompare(String(b.title)));
@@ -3023,7 +3176,7 @@
     const title = titleInp.value.trim();
     const date = dateInp.value;
     if (!title || !date) {
-      showToast(toastIcon("i-alert") + "Add both a title and a date.");
+      showToast(toastIcon("i-alert"), "Add both a title and a date.");
       return;
     }
     events.push({ id: uid(), title: title, date: date });
@@ -3053,11 +3206,21 @@
       weekTests += (mockData[c] || []).filter((r) => weekDates.includes(r.date)).length;
     });
 
-    cardsHost.innerHTML =
-      '<div class="review-card"><div class="rv-label">Tasks completed</div><div class="rv-value">' + doneCount + "/" + weekTodos.length + '</div><div class="rv-sub">last 7 days</div></div>' +
-      '<div class="review-card"><div class="rv-label">Focus time</div><div class="rv-value">' + weekMinutes + 'm</div><div class="rv-sub">' + weekLog.length + ' sessions this week</div></div>' +
-      '<div class="review-card"><div class="rv-label">Notes written</div><div class="rv-value">' + weekNotes.length + '</div><div class="rv-sub">last 7 days</div></div>' +
-      '<div class="review-card"><div class="rv-label">Mock tests logged</div><div class="rv-value">' + weekTests + '</div><div class="rv-sub">last 7 days</div></div>';
+    const card = (label, value, sub) => {
+      const c = makeEl("div", "review-card");
+      c.append(
+        makeEl("div", "rv-label", label),
+        makeEl("div", "rv-value", value),
+        makeEl("div", "rv-sub", sub)
+      );
+      return c;
+    };
+    cardsHost.replaceChildren(
+      card("Tasks completed", doneCount + "/" + weekTodos.length, "last 7 days"),
+      card("Focus time", weekMinutes + "m", weekLog.length + " sessions this week"),
+      card("Notes written", String(weekNotes.length), "last 7 days"),
+      card("Mock tests logged", String(weekTests), "last 7 days")
+    );
 
     const svg = $("#weekBarSvg");
     const W = 460, H = 160, padL = 30, padR = 10, padT = 10, padB = 24;
@@ -3065,37 +3228,73 @@
     const plotH = H - padT - padB;
     const maxMin = Math.max(25, ...weekDates.map((d) => weekLog.filter((l) => l.date === d).reduce((a, b) => a + b.minutes, 0)));
     const barW = plotW / 7 * 0.6;
-    let html = "";
+    const bars = [];
     if (weekMinutes === 0) {
-      html += '<text x="' + (padL + plotW / 2) + '" y="' + (padT + plotH / 2) + '" font-size="12" fill="var(--md-on-surface-variant)" text-anchor="middle" font-family="system-ui, sans-serif">No focus sessions this week</text>';
+      const empty = makeSvg("text", {
+        x: String(padL + plotW / 2), y: String(padT + plotH / 2), "font-size": "12",
+        fill: "var(--md-on-surface-variant)", "text-anchor": "middle",
+        "font-family": "system-ui, sans-serif"
+      });
+      empty.textContent = "No focus sessions this week";
+      bars.push(empty);
     }
     weekDates.forEach((d, i) => {
       const mins = weekLog.filter((l) => l.date === d).reduce((a, b) => a + b.minutes, 0);
       const x = padL + (i + 0.5) * (plotW / 7) - barW / 2;
       const barH = (mins / maxMin) * plotH;
       const y = padT + plotH - barH;
-      html += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + barH.toFixed(1) + '" rx="4" fill="var(--md-primary)"/>';
+      bars.push(makeSvg("rect", {
+        x: x.toFixed(1), y: y.toFixed(1), width: barW.toFixed(1), height: barH.toFixed(1),
+        rx: "4", fill: "var(--md-primary)"
+      }));
       const lbl = new Date(d + "T00:00:00").toLocaleDateString("en-US", { weekday: "short" });
-      html += '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (H - 6) + '" font-size="11" fill="var(--md-on-surface-variant)" text-anchor="middle" font-family="system-ui, sans-serif">' + lbl + "</text>";
-      if (mins > 0) html += '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (y - 4).toFixed(1) + '" font-size="11" fill="var(--md-primary)" text-anchor="middle" font-family="system-ui, sans-serif">' + mins + "</text>";
+      const lblNode = makeSvg("text", {
+        x: (x + barW / 2).toFixed(1), y: String(H - 6), "font-size": "11",
+        fill: "var(--md-on-surface-variant)", "text-anchor": "middle",
+        "font-family": "system-ui, sans-serif"
+      });
+      lblNode.textContent = lbl;
+      bars.push(lblNode);
+      if (mins > 0) {
+        const minsNode = makeSvg("text", {
+          x: (x + barW / 2).toFixed(1), y: (y - 4).toFixed(1), "font-size": "11",
+          fill: "var(--md-primary)", "text-anchor": "middle",
+          "font-family": "system-ui, sans-serif"
+        });
+        minsNode.textContent = String(mins);
+        bars.push(minsNode);
+      }
     });
-    svg.innerHTML = html;
+    svg.replaceChildren(...bars);
 
     const notesHost = $("#reviewNotes");
     if (notes.length === 0) {
-      notesHost.innerHTML = '<div class="empty-state">No notes yet.</div>';
+      notesHost.replaceChildren(makeEl("div", "empty-state", "No notes yet."));
     } else {
-      notesHost.innerHTML = notes.slice().reverse().slice(0, 4).map((n) =>
-        '<div class="note-card" style="position:static;">' +
-        (n.title ? '<div class="n-title">' + escapeHtml(n.title) + "</div>" : "") +
-        '<div class="n-body">' + escapeHtml(n.body.slice(0, 140)) + (n.body.length > 140 ? "…" : "") + "</div></div>"
-      ).join("");
+      const cards = notes.slice().reverse().slice(0, 4).map((n) => {
+        const card = makeEl("div", "note-card");
+        card.style.position = "static";
+        if (n.title) card.appendChild(makeEl("div", "n-title", n.title));
+        card.appendChild(makeEl("div", "n-body", n.body.slice(0, 140) + (n.body.length > 140 ? "…" : "")));
+        return card;
+      });
+      notesHost.replaceChildren(...cards);
     }
 
     const trackerBody = $("#reviewTrackerBody");
-    trackerBody.innerHTML = CATEGORIES.map((cat) => {
+    const trs = CATEGORIES.map((cat) => {
+      const tr = document.createElement("tr");
       const rows = mockData[cat] || [];
-      if (rows.length === 0) return "<tr><td>" + cat + "</td><td>0</td><td>—</td><td>—</td><td>—</td></tr>";
+      if (rows.length === 0) {
+        tr.append(
+          makeEl("td", null, cat),
+          makeEl("td", null, "0"),
+          makeEl("td", null, "—"),
+          makeEl("td", null, "—"),
+          makeEl("td", null, "—")
+        );
+        return tr;
+      }
       const sections = CATEGORY_SECTIONS[cat];
       const marksArr = rows.map((r) => computeRow(r, sections).marks);
       const accArr = rows.map((r) => computeRow(r, sections).accuracy);
@@ -3106,8 +3305,16 @@
       let latestPct = "—";
       if (latestComputed.percentile !== null) latestPct = fmt(latestComputed.percentile) + "%";
       else if (sorted[0].percentile !== "") latestPct = sorted[0].percentile + "%";
-      return "<tr><td>" + cat + "</td><td>" + rows.length + "</td><td>" + fmt(avgMarks) + "</td><td>" + fmt(avgAcc) + "%</td><td>" + latestPct + "</td></tr>";
-    }).join("");
+      tr.append(
+        makeEl("td", null, cat),
+        makeEl("td", null, String(rows.length)),
+        makeEl("td", null, fmt(avgMarks)),
+        makeEl("td", null, fmt(avgAcc) + "%"),
+        makeEl("td", null, latestPct)
+      );
+      return tr;
+    });
+    trackerBody.replaceChildren(...trs);
   }
 
   /* ---------------- backup ---------------- */
@@ -3140,7 +3347,7 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
-    showToast(toastIcon("i-download") + "Backup downloaded. Import it in Chrome or Firefox to move your data across browsers.");
+    showToast(toastIcon("i-download"), "Backup downloaded. Import it in Chrome or Firefox to move your data across browsers.");
   }
 
   async function importBackupFile(file) {
@@ -3200,9 +3407,9 @@
       updateStatsUI();
       renderDockSettings();
       renderStorageUi();
-      showToast(toastIcon("i-check") + "Backup imported successfully.");
+      showToast(toastIcon("i-check"), "Backup imported successfully.");
     } catch (e) {
-      showToast(toastIcon("i-alert") + "Could not read that file — make sure it’s a Study Deck backup JSON.");
+      showToast(toastIcon("i-alert"), "Could not read that file — make sure it’s a Study Deck backup JSON.");
     }
   }
 
@@ -3563,7 +3770,7 @@
       store.setSyncEnabled(settings.syncEnabled);
       await store.save("ui-settings", settings);
       if (settings.syncEnabled) {
-        showToast(toastIcon("i-cloud") + "Browser sync enabled.");
+        showToast(toastIcon("i-cloud"), "Browser sync enabled.");
         await store.pushAll();
       } else {
         showToast("Sync paused — data stays on this device.");

@@ -1,6 +1,6 @@
 # UI audit report
 
-Generated: 2026-11-13 11:03
+Generated: 2026-11-13 11:32
 
 **Checks:** 63 · PASS 63 · FAIL 0 · WARN 0 · SKIP 0
 

@@ -149,7 +149,7 @@ def static_checks():
     # D6/D7 + E6 + M5/M6 + O: newer review fixes
     add("D. Home dashboard", "D6 Overdue tag", "PASS" if "isTaskOverdue" in js and ".overdue-tag" in css else "FAIL",
         "visible Overdue tag next to late tasks")
-    add("D. Home dashboard", "D7 Engine branding", "PASS" if "applySearchEngineBranding" in js and "engineLogoMarkup" in js else "FAIL",
+    add("D. Home dashboard", "D7 Engine branding", "PASS" if "applySearchEngineBranding" in js and "engineLogoNode" in js else "FAIL",
         "search logo and placeholder follow Settings → Search")
     add("E. Planner", "E6 Day drill-down", "PASS" if "renderDayEvents" in js and 'id="dayEvents"' in html else "FAIL",
         "date cells select a day and list its events")
@@ -181,7 +181,7 @@ def static_checks():
     font_decl = '@font-face' in css and 'Poppins-Regular.ttf' in css and (ROOT / "fonts" / "OFL.txt").exists()
     add("P. MYNT theme", "P2 Poppins bundle", "PASS" if font_file and font_decl else "FAIL",
         "bundled Poppins with OFL licence and local @font-face")
-    blob_clock = "M93.6379" in js and "a-tick" not in js and 'class="a-hand a-second"' in js
+    blob_clock = "M93.6379" in js and "a-tick" not in js and "a-hand a-second" in js
     add("P. MYNT theme", "P3 Blob analog clock", "PASS" if blob_clock else "FAIL",
         "MYNT squircle face, pill hands, orbiting second dot, CSS sweep")
     motion = all(t in css for t in ("--md-motion-ease", "--md-motion-decelerate", "--md-motion-accelerate"))

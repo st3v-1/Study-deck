@@ -19,12 +19,12 @@
   --md-on-tertiary-container: #1B3041;
   --md-error: #b3261e;
   --md-on-error: #ffffff;
-  --md-error-container: #f9dedc;
+  --md-error-container: #FCA5A5;
   --md-on-error-container: #410e0b;
   /* Success (correct answers / positive marks) — Material 3 green. */
   --md-success: #386A20;
   --md-on-success: #ffffff;
-  --md-success-container: #C4EED0;
+  --md-success-container: #6EE7B7;
   --md-on-success-container: #0D3919;
   --md-surface: #BBD6FD;
   --md-surface-dim: #b1ccf2;

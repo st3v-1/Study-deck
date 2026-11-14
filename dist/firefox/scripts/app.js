@@ -2698,7 +2698,11 @@
       right += plus;
       wrong += minus;
       const netVal = r[key + "Net"];
-      const net = (netVal !== "" && netVal != null && !isNaN(Number(netVal))) ? Number(netVal) : 0;
+      /* Section marks default to Plus - Minus so Total Marks (and the trend)
+         stay live while the user fills the attempt columns; a manually typed
+         Net value always overrides this. */
+      const autoNet = (Number(r[key + "Plus"]) || 0) - (Number(r[key + "Minus"]) || 0);
+      const net = (netVal !== "" && netVal != null && !isNaN(Number(netVal))) ? Number(netVal) : autoNet;
       nets[key] = net;
       marks += net;
     });
@@ -2907,20 +2911,20 @@
         inp.addEventListener("input", (e) => {
           const field = e.target.dataset.f;
           r[field] = e.target.type === "number" ? (e.target.value === "" ? "" : Number(e.target.value)) : e.target.value;
-          persistSoon("mocktests-data", mockData);
+          persist("mocktests-data", mockData);
           updateComputedCells(tr, r, sections);
           updateSummaryAndTrend(rows, sections);
         });
       });
       tr.querySelector(".marks-toggle").addEventListener("click", () => {
         r.marksColor = r.marksColor === "pos" ? "neg" : (r.marksColor === "neg" ? "" : "pos");
-        persistSoon("mocktests-data", mockData);
+        persist("mocktests-data", mockData);
         updateComputedCells(tr, r, sections);
       });
       tr.querySelectorAll(".ovr-reset").forEach((btn) => {
         btn.addEventListener("click", () => {
           r[btn.dataset.ovr] = "";
-          persistSoon("mocktests-data", mockData, 0);
+          persist("mocktests-data", mockData);
           updateComputedCells(tr, r, sections);
           updateSummaryAndTrend(rows, sections);
         });
@@ -2931,13 +2935,13 @@
         const index = list.findIndex((x) => x.id === r.id);
         if (index < 0) return;
         const [removed] = list.splice(index, 1);
-        persistSoon("mocktests-data", mockData, 0);
+        persist("mocktests-data", mockData);
         renderSheet();
         const addRow = $("#addRowBtn");
         if (addRow) addRow.focus();
         undoToast("Test row deleted.", () => {
           mockData[category].splice(Math.min(index, mockData[category].length), 0, removed);
-          persistSoon("mocktests-data", mockData, 0);
+          persist("mocktests-data", mockData);
           if (activeCategory === category) renderSheet();
         });
       });
@@ -3922,10 +3926,13 @@
       }
     });
 
-    /* flush pending sync writes when the page is hidden */
+    /* flush pending sync writes when the page is hidden or closing, so a
+       tracker edit is not lost if the tab is closed before the sync debounce
+       fires (local writes are already immediate, but sync is debounced). */
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) store.flush();
     });
+    window.addEventListener("beforeunload", () => { store.flush(); });
 
     /* system theme changes */
     if (systemTheme.addEventListener) {

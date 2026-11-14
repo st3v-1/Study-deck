@@ -1,6 +1,6 @@
 # UI audit report
 
-Generated: 2026-11-14 13:18
+Generated: 2026-11-14 14:06
 
 **Checks:** 71 · PASS 71 · FAIL 0 · WARN 0 · SKIP 0
 
@@ -15,7 +15,7 @@ Generated: 2026-11-14 13:18
 | L. Accessibility | L1 Control names | PASS | all buttons named |
 | L. Accessibility | L3 h1 per panel | PASS | all panels have h1 |
 | J. Settings | J3/J4 No dead drag UI | PASS | clean |
-| A. App shell | A6 CSS balance | PASS | braces 803 / 803 |
+| A. App shell | A6 CSS balance | PASS | braces 807 / 807 |
 | A. App shell | A7 JS balance | PASS | balanced |
 | H. Google apps popup | H1 Anchored popup | PASS | anchored to #appsBtn with a transparent backdrop |
 | D. Home dashboard | D6 Overdue tag | PASS | visible Overdue tag next to late tasks |

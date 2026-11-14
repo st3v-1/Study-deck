@@ -2660,7 +2660,8 @@
     const sections = CATEGORY_SECTIONS[activeCategory];
     const tr = document.createElement("tr");
     [
-      ["S.No", "col-sno"], ["Date"], ["Exam"], ["Mock Name", "col-mock"], ["Rank"], ["Total Cand."],
+      ["S.No", "col-sno"], ["Date"], ["Exam"], ["Mock Name", "col-mock"], ["Test Series"],
+      ["Rank"], ["Total Cand."],
       ["Marks"], ["Percentile", "hdr-pct"], ["Accuracy", "hdr-pct"], ["Attempt"],
       ["Right", "hdr-right"], ["Wrong", "hdr-wrong"]
     ].forEach(([label, cls]) => tr.appendChild(makeEl("th", cls, label)));
@@ -2677,7 +2678,7 @@
   }
 
   function blankRow() {
-    return { id: uid(), date: todayStr(), exam: "", mockName: "", rank: "", totalCandidates: "", percentile: "" };
+    return { id: uid(), date: todayStr(), exam: "", mockName: "", testSeries: "", rank: "", totalCandidates: "", percentile: "" };
   }
 
   function ovrButton(field) {
@@ -2729,6 +2730,7 @@
     if (r.attemptOvr !== "" && r.attemptOvr != null) eff.attempt = Number(r.attemptOvr);
     if (r.accuracyOvr !== "" && r.accuracyOvr != null) eff.accuracy = Number(r.accuracyOvr);
     if (r.percentile !== "" && r.percentile != null) eff.percentile = Number(r.percentile);
+    if (r.marksOvr !== "" && r.marksOvr != null) eff.marks = Number(r.marksOvr);
     return eff;
   }
 
@@ -2744,14 +2746,14 @@
       input.title = on ? "Manual override — click ↺ to restore the calculated value" : "";
     };
 
-    const marksBtn = tr.querySelector(".marks-toggle");
-    if (marksBtn) {
-      marksBtn.textContent = fmt(eff.marks);
-      const colour = r.marksColor === "pos" ? "green" : r.marksColor === "neg" ? "red" : "default";
-      marksBtn.title = "Marks colour: " + colour + " — click to cycle";
-      marksBtn.setAttribute("aria-label", "Marks " + fmt(eff.marks) + ", colour " + colour + ". Click to cycle the colour.");
-    }
+    const marksInput = tr.querySelector('[data-f="marksOvr"]');
     const marksTd = tr.querySelector(".total-marks");
+    if (marksInput && marksInput !== active) {
+      const isOverride = r.marksOvr !== "" && r.marksOvr != null;
+      marksInput.value = isOverride ? r.marksOvr : fmt(eff.marks);
+      marksInput.placeholder = isOverride ? "" : "auto";
+    }
+    markOverride(marksInput, "marksOvr");
     if (marksTd) {
       marksTd.classList.toggle("pos", r.marksColor === "pos");
       marksTd.classList.toggle("neg", r.marksColor === "neg");
@@ -2845,17 +2847,25 @@
       }));
       mockTd.className = "col-mock";
       tr.appendChild(mockTd);
+      tr.appendChild(cell(trackerInput("text", "testSeries", {
+        className: "wide", placeholder: "Series", list: "testSeriesOptions", value: r.testSeries || ""
+      })));
       tr.appendChild(cell(trackerInput("number", "rank", { placeholder: "Rank", value: r.rank || "" })));
       tr.appendChild(cell(trackerInput("number", "totalCandidates", {
         placeholder: "Total", value: r.totalCandidates || ""
       })));
 
-      const marksTd = makeEl("td", "computed total-marks");
+      const marksTd = makeEl("td", "computed total-marks ovr-cell");
       marksTd.style.fontWeight = "700";
-      const marksBtn = makeEl("button", "marks-toggle", "0");
-      marksBtn.type = "button";
-      marksBtn.title = "Click to cycle the marks colour";
-      marksTd.appendChild(marksBtn);
+      const marksInput = trackerInput("number", "marksOvr", { step: "0.01", bold: true });
+      marksInput.value = (r.marksOvr === undefined || r.marksOvr === null || r.marksOvr === "") ? "" : r.marksOvr;
+      marksInput.placeholder = "auto";
+      marksTd.append(marksInput, ovrButton("marksOvr"));
+      const marksColorBtnEl = makeEl("button", "marks-color", "●");
+      marksColorBtnEl.type = "button";
+      marksColorBtnEl.title = "Cycle marks colour";
+      marksColorBtnEl.setAttribute("aria-label", "Cycle marks colour");
+      marksTd.appendChild(marksColorBtnEl);
       tr.appendChild(marksTd);
 
       const autoTag = makeEl("span", "auto-tag", "auto");
@@ -2916,11 +2926,14 @@
           updateSummaryAndTrend(rows, sections);
         });
       });
-      tr.querySelector(".marks-toggle").addEventListener("click", () => {
-        r.marksColor = r.marksColor === "pos" ? "neg" : (r.marksColor === "neg" ? "" : "pos");
-        persist("mocktests-data", mockData);
-        updateComputedCells(tr, r, sections);
-      });
+      const marksColorBtn = tr.querySelector(".marks-color");
+      if (marksColorBtn) {
+        marksColorBtn.addEventListener("click", () => {
+          r.marksColor = r.marksColor === "pos" ? "neg" : (r.marksColor === "neg" ? "" : "pos");
+          persist("mocktests-data", mockData);
+          updateComputedCells(tr, r, sections);
+        });
+      }
       tr.querySelectorAll(".ovr-reset").forEach((btn) => {
         btn.addEventListener("click", () => {
           r[btn.dataset.ovr] = "";

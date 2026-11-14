@@ -21,6 +21,11 @@
   --md-on-error: #ffffff;
   --md-error-container: #f9dedc;
   --md-on-error-container: #410e0b;
+  /* Success (correct answers / positive marks) — Material 3 green. */
+  --md-success: #386A20;
+  --md-on-success: #ffffff;
+  --md-success-container: #C4EED0;
+  --md-on-success-container: #0D3919;
   --md-surface: #BBD6FD;
   --md-surface-dim: #b1ccf2;
   --md-surface-container-lowest: #ffffff;
@@ -101,6 +106,11 @@ html[data-theme="dark"] {
   --md-on-error: #601410;
   --md-error-container: #8c1d18;
   --md-on-error-container: #f9dedc;
+  /* Success (correct answers / positive marks) — Material 3 green. */
+  --md-success: #8CD9A1;
+  --md-on-success: #0D3919;
+  --md-success-container: #0D3919;
+  --md-on-success-container: #B8F1C8;
   --md-surface: #16191d;
   --md-surface-dim: #101215;
   --md-surface-container-lowest: #101215;
@@ -1479,7 +1489,7 @@ table.sheet input[type="date"] { min-width: 132px; }
 table.sheet td.computed { font-family: var(--font-mono); font-weight: 700; font-size: 12.5px; }
 table.sheet td.total-marks { font-weight: 700; transition: background var(--state-transition), color var(--state-transition); }
 table.sheet td.total-marks:hover { filter: brightness(1.12); }
-table.sheet td.total-marks.pos { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+table.sheet td.total-marks.pos { background: var(--md-success-container); color: var(--md-on-success-container); }
 table.sheet td.total-marks.neg { background: var(--md-error-container); color: var(--md-on-error-container); }
 table.sheet td.total-marks input {
   width: 100%;
@@ -1514,12 +1524,12 @@ table.sheet td.total-marks .marks-color {
   transition: opacity var(--state-transition), background var(--state-transition), color var(--state-transition);
 }
 table.sheet td.total-marks .marks-color:hover { opacity: 1; background: var(--action); color: var(--on-action); }
-table.sheet td.total-marks.pos .marks-color { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+table.sheet td.total-marks.pos .marks-color { background: var(--md-success-container); color: var(--md-on-success-container); }
 table.sheet td.total-marks.neg .marks-color { background: var(--md-error-container); color: var(--md-on-error-container); }
-table.sheet th.hdr-right { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+table.sheet th.hdr-right { background: var(--md-success-container); color: var(--md-on-success-container); }
 table.sheet th.hdr-wrong { background: var(--md-error-container); color: var(--md-on-error-container); }
 table.sheet th.hdr-pct { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
-table.sheet td.right-cell { background: var(--md-primary-container); }
+table.sheet td.right-cell { background: var(--md-success-container); }
 table.sheet td.wrong-cell { background: var(--md-error-container); }
 table.sheet td.pos { color: var(--link); }
 table.sheet td.neg { color: var(--md-error); }
